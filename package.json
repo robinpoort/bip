@@ -1,0 +1,15 @@
+{
+  "name": "bip",
+  "description": "Bip touch transitions",
+  "version": "0.0.1",
+  "homepage": "https://github.com/robinpoort/bip",
+  "author": "Robin Poort",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robinpoort/bip.git"
+  },
+  "bugs": {
+    "url": "https://github.com/robinpoort/bip/issues"
+  },
+  "license": "MIT"
+}
