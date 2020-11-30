@@ -6,7 +6,7 @@
   } else if (typeof exports === 'object') {
     module.exports = factory(root);
   } else {
-    root.bip = factory(root);
+    root.Bip = factory(root);
   }
 })(typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this, function (window) {
 
