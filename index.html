@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bip JS</title>
+    <link rel="stylesheet" href="src/css/bip.css">
+</head>
+<style>
+    html {
+        height: 100%;
+        overflow: hidden;
+    }
+    body {
+        position: relative;
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+        height: 100%;
+    }
+
+    *, *::before, *::after {
+        box-sizing: border-box;
+    }
+
+    .wrapper {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* Demo styling */
+    .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, .5);
+        opacity: 0;
+        transition: opacity 300ms ease-out, transform 300ms ease-out;
+        transform: scale(.6);
+    }
+
+    .overlay.is-open {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .top,
+    .right,
+    .bottom,
+    .left {
+        position: absolute;
+        z-index: 1;
+        background: #fff;
+        padding: 1rem;
+    }
+
+    .top,
+    .bottom {
+        width: 50%;
+        transition: transform 300ms ease-out, width 300ms ease-out;
+    }
+
+    .top.is-open,
+    .bottom.is-open {
+        transform: translateY(0);
+        width: 100%;
+    }
+
+    .top button,
+    .bottom button {
+        position: absolute;
+        left: calc(50% - 2rem);
+        width: 4rem;
+    }
+
+    .top {
+        top: 0;
+        transform: translateY(-100%);
+    }
+
+    .top button {
+        top: 100%;
+    }
+
+    .bottom {
+        bottom: 0;
+        transform: translateY(100%);
+    }
+
+    .bottom button {
+        bottom: 100%;
+    }
+
+    .right,
+    .left {
+        height: 100%;
+        transition: transform 300ms ease-out;
+    }
+
+    .right.is-open,
+    .left.is-open {
+        transform: translateX(0);
+    }
+
+    .right button,
+    .left button {
+        position: absolute;
+        top: calc(50% - 2rem);
+        height: 4rem;
+    }
+
+    .right {
+        right: 0;
+        transform: translateX(100%);
+    }
+
+    .right button {
+        right: 100%;
+    }
+
+    .left {
+        left: 0;
+        transform: translateX(-100%);
+    }
+
+    .left button {
+        left: 100%;
+    }
+
+</style>
+<body>
+
+<div class="wrapper">
+    <div class="overlay" data-touch-id="overlay" data-touch-closes="top,right,bottom,left"></div>
+    <div class="top" data-touch data-touch-id="top" data-touch-buddies="overlay">
+        <button type="button" data-touch-controls="top">Toggle</button>
+        <h1>Top</h1>
+        <p>Top details</p>
+        <p>Top details</p>
+        <p>Top details</p>
+    </div>
+    <div class="right" data-touch data-touch-id="right" data-touch-buddies="overlay">
+        <button type="button" data-touch-controls="right">Toggle</button>
+        <h1>Right</h1>
+        <p>Right details</p>
+        <p>Right details</p>
+        <p>Right details</p>
+    </div>
+    <div class="bottom" data-touch data-touch-id="bottom" data-touch-buddies="overlay">
+        <button type="button" data-touch-controls="bottom">Toggle</button>
+        <h1>Bottom</h1>
+        <p>Bottom details</p>
+        <p>Bottom details</p>
+        <p>Bottom details</p>
+    </div>
+    <div class="left" data-touch data-touch-id="left" data-touch-buddies="overlay">
+        <button type="button" data-touch-controls="left">Toggle</button>
+        <h1>Left</h1>
+        <p>Left details</p>
+        <p>Left details</p>
+        <p>Left details</p>
+    </div>
+</div>
+
+<!-- loading -->
+<script src="src/js/bip.js"></script>
+
+<!-- initialize -->
+<script type="text/javascript">
+  var bip = new bip();
+</script>
+</body>
+</html>
