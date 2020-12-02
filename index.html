@@ -28,6 +28,7 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
+        will-change: transform;
     }
 
     /* Demo styling */
@@ -171,7 +172,9 @@
 
 <!-- initialize -->
 <script type="text/javascript">
-  var bip = new bip();
+  const bip = new Bip('[data-touch]');
+
+  // bip.toggle(document.querySelector('[data-touch-id="right"'));
 </script>
 </body>
 </html>

@@ -21,8 +21,14 @@
 
   // Default variables
   // =================
+  var defaults = {
 
-  var defaults = {};
+    selector: '[data-touch]',
+    controls: '[data-touch-controls]',
+    closes: '[data-touch-closes]',
+
+    emitEvents: true
+  };
 
 
   // Closest polyfill
@@ -51,25 +57,14 @@
 
   // Emit event
   // ==========
-  // @TODO: not in use yet
 
-  function emitEvent(element, details) {
-    // Create a new event
-    let event;
-    if (typeof window.CustomEvent === 'function') {
-      event = new CustomEvent('bip', {
-        bubbles: true,
-        cancelable: true,
-        detail: details
-      });
-    } else {
-      event = document.createEvent('CustomEvent');
-      event.initCustomEvent('bip', true, true, details);
-    }
-
-    // Dispatch the event
-    element.dispatchEvent(event);
-
+  function emitEvent(type, settings, details) {
+    if (!settings.emitEvents || typeof window.CustomEvent !== 'function') return;
+    var event = new CustomEvent(type, {
+      bubbles: true,
+      detail: details
+    });
+    document.dispatchEvent(event);
   }
 
 
@@ -188,6 +183,7 @@
 
   function getCalculations(from, to, difference, dimension) {
     let values = {};
+    // @TODO: add to object when 2 (or 3) dimensional?
     if (dimension === 2) {
       values = {
         "from": from,
@@ -477,6 +473,7 @@
   function toggle(target) {
     resetStyle(target);
     target.classList.toggle(openClass);
+    // @TODO: set buddies some place else
     if (buddies) {
       buddies.forEach(function (buddy) {
         if (target.classList.contains(openClass)) {
@@ -490,6 +487,7 @@
         }
       });
     }
+    emitEvent('bipToggle', settings);
   }
 
 
@@ -520,7 +518,7 @@
   // Touch start
   // ===========
 
-  window.addEventListener('touchstart', function (event) {
+  function touchstartHandler(event) {
     if (!event.target.closest(gestureZones)) return false;
     ignore = !!event.target.closest('[data-touch-ignore]');
     if (ignore) return false;
@@ -545,13 +543,13 @@
 
     // Disable styling
     document.body.style.overflow = 'hidden';
-  }, false);
+  }
 
 
   // Touch move
   // ==========
 
-  window.addEventListener('touchmove', function (event) {
+  function touchmoveHandler(event) {
     if (!event.target.closest(gestureZones)) return false;
 
     // No action for data-touch-ignore
@@ -574,14 +572,13 @@
     isBetween = (settings.axis === 'x') ? translatedX.between(settings.min, settings.max, true) : translatedY.between(settings.min, settings.max, true);
 
     transitionWithGesture(target, translatedX, translatedY, touchmoveX, touchmoveY, isBetween);
-
-  }, false);
+  }
 
 
   // Touch end
   // =========
 
-  window.addEventListener('touchend', function (event, i) {
+  function touchendHandler(event) {
     if (!event.target.closest(gestureZones)) return false;
 
     // No action for data-touch-ignore
@@ -592,8 +589,7 @@
     touchendX = event.changedTouches[0].screenX;
     touchendY = event.changedTouches[0].screenY;
     handleGesture(event, target);
-
-  }, false);
+  }
 
 
   // Click listener
@@ -629,7 +625,7 @@
 
   // Constructor
 
-  return function (options) {
+  return function (selector, options) {
 
     // Unique Variables
     var publicAPIs = {};
@@ -653,8 +649,14 @@
       // Merge options into defaults
       settings = extend(defaults, options || {});
 
-      // Click
+      // Event listeners
       window.addEventListener('click', clickHandler, true);
+      window.addEventListener('touchstart', touchstartHandler, true);
+      window.addEventListener('touchmove', touchmoveHandler, true);
+      window.addEventListener('touchend', touchendHandler, true);
+
+      // Emit event
+      emitEvent('bipInit', settings);
 
     };
 
