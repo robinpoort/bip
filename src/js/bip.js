@@ -59,7 +59,7 @@
   // ==========
 
   function emitEvent(type, settings, details) {
-    if (!settings.emitEvents || typeof window.CustomEvent !== 'function') return;
+    if (typeof window.CustomEvent !== 'function') return;
     var event = new CustomEvent(type, {
       bubbles: true,
       detail: details
@@ -451,6 +451,8 @@
       resetStyle(target);
     }
 
+    emitEvent('bipDragged', settings);
+
     // Reset body styling
     document.body.removeAttribute('style');
   }
@@ -540,6 +542,8 @@
       settings = getSettings(target);
       buddies = getBuddies(target, eventTarget) || false;
     }
+
+    emitEvent('bipDrag', settings);
 
     // Disable styling
     document.body.style.overflow = 'hidden';
@@ -654,9 +658,6 @@
       window.addEventListener('touchstart', touchstartHandler, true);
       window.addEventListener('touchmove', touchmoveHandler, true);
       window.addEventListener('touchend', touchendHandler, true);
-
-      // Emit event
-      emitEvent('bipInit', settings);
 
     };
 
