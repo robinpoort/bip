@@ -46,7 +46,7 @@
   let gestureZones = false;
   let target = false;
   let final = false;
-  let settings2 = [];
+  let targetValues = [];
   let buddies = [];
   let buddiesValues = [];
   let ignore = false;
@@ -361,7 +361,7 @@
   // =====================
 
   function calculateValues(movedX, movedY, transitionValues, settings) {
-    const dir = (settings2.axis === 'x') ? movedX : movedY;
+    const dir = (targetValues.axis === 'x') ? movedX : movedY;
     // Calculate matrix properties and values
     // @TODO: See if we can improve 2 dimensional elements
     let returnValues = {
@@ -406,7 +406,7 @@
     let y = translatedY || 0;
     let movedX = Math.abs(touchmoveX - touchstartX);
     let movedY = Math.abs(touchmoveY - touchstartY);
-    let transitionValues = calculateValues(movedX, movedY, settings2.transitionValues, settings);
+    let transitionValues = calculateValues(movedX, movedY, targetValues.transitionValues, settings);
 
     // Only style if we're inbetween
     if (isBetween) {
@@ -423,9 +423,9 @@
         });
       }
     }
-    // @TODO: testing with elastic
+    // @TODO: testing with elastic pull
     // else {
-    //   let diff = getDifference(y, settings2.max);
+    //   let diff = getDifference(y, targetValues.max);
     //   console.log(diff);
     //   if (diff < 25) {
     //     let elasticX = x ? x + diff / 2 : x;
@@ -434,7 +434,7 @@
     //   }
     // }
 
-    final = calculateValues(touchmoveX - touchstartX, touchmoveY - touchstartY, settings2.transitionValues, settings, settings)
+    final = calculateValues(touchmoveX - touchstartX, touchmoveY - touchstartY, targetValues.transitionValues, settings, settings)
   }
 
 
@@ -448,7 +448,7 @@
     moveDirection = false;
     target = false;
     final = false;
-    settings2 = [];
+    targetValues = [];
     buddies = [];
     buddiesValues = [];
   }
@@ -471,9 +471,9 @@
   // =======================
 
   function handleGesture(event, target, moveDirection, settings) {
-    const diff = (settings2.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
-    const moveFrom = (settings2.axis === 'x') ? settings2.transitionValues.translate.from.x : settings2.transitionValues.translate.from.y;
-    const movedTo = (settings2.axis === 'x') ? final.translateX : final.translateY;
+    const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
+    const moveFrom = (targetValues.axis === 'x') ? targetValues.transitionValues.translate.from.x : targetValues.transitionValues.translate.from.y;
+    const movedTo = (targetValues.axis === 'x') ? final.translateX : final.translateY;
 
     if (diff > settings.threshold && movedTo > moveFrom && moveDirection === 'forward') {
       toggle(target, settings);
@@ -576,7 +576,7 @@
       target = getTarget(eventTarget, settings);
 
       if (target) {
-        settings2 = getValues(target, settings);
+        targetValues = getValues(target, settings);
       }
 
       emitEvent('bipDrag', settings);
@@ -599,10 +599,10 @@
       // Variables
       let touchmoveX = event.changedTouches[0].screenX;
       let touchmoveY = event.changedTouches[0].screenY;
-      let translatedX = (settings2.axis === 'x') ? touchmoveX - (touchstartX - settings2.translate.x) : false;
-      let translatedY = (settings2.axis === 'y') ? touchmoveY - (touchstartY - settings2.translate.y) : false;
-      let difference = (settings2.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
-      const isBetween = (settings2.axis === 'x') ? translatedX.between(settings2.min, settings2.max, true) : translatedY.between(settings2.min, settings2.max, true);
+      let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.translate.x) : false;
+      let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.translate.y) : false;
+      let difference = (targetValues.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
+      const isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.min, targetValues.max, true) : translatedY.between(targetValues.min, targetValues.max, true);
 
       if (buddies && touchmoved === 0) {
         buddies.forEach(function (buddy) {
