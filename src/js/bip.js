@@ -41,6 +41,8 @@
   let touchendX = 0;
   let touchendY = 0;
   let touchmoved = false;
+  let lastDifference = false;
+  let moveDirection = false;
   let gestureZones = false;
   let target = false;
   let final = false;
@@ -429,6 +431,8 @@
 
   function resetValues() {
     touchmoved = false;
+    lastDifference = false;
+    moveDirection = false;
     target = false;
     final = false;
     settings2 = [];
@@ -453,12 +457,12 @@
   // Handle finished gesture
   // =======================
 
-  function handleGesture(event, target, settings) {
+  function handleGesture(event, target, moveDirection, settings) {
     const diff = (settings2.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
     const moveFrom = (settings2.axis === 'x') ? settings2.transitionValues.translate.from.x : settings2.transitionValues.translate.from.y;
     const movedTo = (settings2.axis === 'x') ? final.translateX : final.translateY;
 
-    if (diff > settings.threshold && movedTo > moveFrom) {
+    if (diff > settings.threshold && movedTo > moveFrom && moveDirection === 'forward') {
       toggle(target, settings);
     } else {
       resetStyle(target);
@@ -566,6 +570,7 @@
       let touchmoveY = event.changedTouches[0].screenY;
       let translatedX = (settings2.axis === 'x') ? touchmoveX - (touchstartX - settings2.translate.x) : false;
       let translatedY = (settings2.axis === 'y') ? touchmoveY - (touchstartY - settings2.translate.y) : false;
+      let difference = (settings2.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
       const isBetween = (settings2.axis === 'x') ? translatedX.between(settings2.min, settings2.max, true) : translatedY.between(settings2.min, settings2.max, true);
 
       if (buddies && touchmoved === 0) {
@@ -575,6 +580,19 @@
         touchmoved = 1;
       }
 
+      // Set last difference
+      if ((getDifference(difference, lastDifference) > 10) || lastDifference === false) {
+        lastDifference = difference
+      }
+
+      // Set move direction
+      if (isBetween && difference > lastDifference) {
+        moveDirection = 'forward';
+      } else if (isBetween && difference < lastDifference) {
+        moveDirection = 'backward';
+      }
+
+      // Transition
       transitionWithGesture(target, translatedX, translatedY, touchmoveX, touchmoveY, isBetween, settings);
     }
 
@@ -594,7 +612,7 @@
       touchendY = event.changedTouches[0].screenY;
 
       // Handle the gesture
-      handleGesture(event, target, settings);
+      handleGesture(event, target, moveDirection, settings);
     }
 
 
