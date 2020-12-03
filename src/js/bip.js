@@ -477,7 +477,7 @@
 
 
   // Toggle
-  // ==============
+  // ======
 
   function toggle(target, settings) {
 
@@ -505,8 +505,26 @@
       });
     }
 
+    // Get controller
+    const controller = document.querySelector('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
+    if (controller) {
+      setAria(controller);
+    }
+
     // Emit toggle event
     emitEvent('bipToggle', settings);
+  }
+
+
+  // Set aria attributes to the button
+  // =================================
+
+  function setAria(button, settings) {
+    if (button.classList.contains(settings.openClass)) {
+      button.setAttribute('aria-expanded', 'true');
+    } else {
+      button.setAttribute('aria-expanded', 'false');
+    }
   }
 
 
@@ -674,6 +692,10 @@
 
       // Set gesture zones
       gestureZones = settings.selector + ',' + settings.controls + ',' + settings.closes;
+
+      document.querySelectorAll(settings.controls).forEach(function(control) {
+        setAria(control, settings);
+      });
 
       // Event listeners
       window.addEventListener('click', clickHandler, true);
