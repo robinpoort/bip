@@ -30,8 +30,8 @@
     threshold: 35,
     openClass: 'is-open',
 
-    matrixValues: ['translate', 'scale'],
-    cssValues: ['opacity', 'width'],
+    matrixValues: ['translate', 'scale', 'rotate', 'skew'],
+    cssValues: ['opacity'],
 
     emitEvents: true
   };
@@ -148,7 +148,7 @@
     const matrix = style['transform'] || style.webkitTransform || style.mozTransform;
 
     // No transform property set
-    if (matrix === 'none' && type === 'translate') {
+    if (matrix === 'none' && (type === 'translate' || type === 'rotate' || type === 'skew')) {
       return {
         x: 0,
         y: 0
@@ -172,6 +172,16 @@
       return {
         x: matrixValues[0],
         y: matrixValues[3]
+      }
+    } else if (type === 'rotate') {
+      return {
+        x: matrixValues[2],
+        y: matrixValues[2],
+      }
+    } else if (type === 'skew') {
+      return {
+        x: matrixValues[1],
+        y: matrixValues[2]
       }
     }
   }
@@ -359,6 +369,9 @@
       "translateY": ((transitionValues.translate.ydir === 'down') ? parseFloat(transitionValues.translate.from.y) - (dir * transitionValues.translate.ypoints) : parseFloat(transitionValues.translate.from.y) + (dir * transitionValues.translate.ypoints)),
       "scaleX": ((transitionValues.scale.dir === 'down') ? parseFloat(transitionValues.scale.from.x) - (dir * transitionValues.scale.points) : parseFloat(transitionValues.scale.from.x) + (dir * transitionValues.scale.points)),
       "scaleY": ((transitionValues.scale.ydir === 'down') ? parseFloat(transitionValues.scale.from.y) - (dir * transitionValues.scale.ypoints) : parseFloat(transitionValues.scale.from.y) + (dir * transitionValues.scale.ypoints)),
+      "skewX": ((transitionValues.skew.dir === 'down') ? parseFloat(transitionValues.skew.from.x) - (dir * transitionValues.skew.points) : parseFloat(transitionValues.skew.from.x) + (dir * transitionValues.skew.points)),
+      "skewY": ((transitionValues.skew.ydir === 'down') ? parseFloat(transitionValues.skew.from.y) - (dir * transitionValues.skew.ypoints) : parseFloat(transitionValues.skew.from.y) + (dir * transitionValues.skew.ypoints)),
+      "rotate": ((transitionValues.rotate.dir === 'down') ? parseFloat(transitionValues.rotate.from.x) - (dir * transitionValues.rotate.points) : parseFloat(transitionValues.rotate.from.x) + (dir * transitionValues.rotate.points)),
     };
     // Calculate CSS properties and values
     settings.cssValues.forEach(function(prop) {
@@ -376,7 +389,7 @@
     let y = yval ? yval : values.translateY;
 
     // Set Matrix values
-    element.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + values.scaleX + ',' + values.scaleY + ')';
+    element.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + values.scaleX + ',' + values.scaleY + ') skew(' + values.skewX * 10 + 'deg,' + values.skewY * 10 + 'deg) rotate(' + values.rotate + 'deg)';
 
     // Set CSS properties and values
     settings.cssValues.forEach(function(prop) {
@@ -508,7 +521,7 @@
     // Get controller
     const controller = document.querySelector('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
     if (controller) {
-      setAria(controller);
+      setAria(controller, settings);
     }
 
     // Emit toggle event
