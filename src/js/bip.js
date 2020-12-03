@@ -27,8 +27,24 @@
     controls: '[data-touch-controls]',
     closes: '[data-touch-closes]',
 
+    threshold: 35,
+    openClass: 'is-open',
+
     emitEvents: true
   };
+
+  let touchstartX = 0;
+  let touchstartY = 0;
+  let touchendX = 0;
+  let touchendY = 0;
+  let touchmoved = false;
+  let gestureZones = false;
+  let target = false;
+  let final = false;
+  let settings2 = [];
+  let buddies = [];
+  let buddiesValues = [];
+  let ignore = false;
 
 
   // Closest polyfill
@@ -209,7 +225,7 @@
   // =====================
   // @TODO: don't ask to each value separate but run an array of elements instead? | Also for calculatevalues and setstyling
 
-  function getTransitionValues(element, calculator) {
+  function getTransitionValues(element, calculator, settings) {
 
     // Get initial values
     const calculateFrom = getMatrixValues(calculator, "translate");
@@ -220,20 +236,20 @@
 
     // Get calculator value
     calculator.style.transition = 'none';
-    calculator.classList.toggle(openClass);
+    calculator.classList.toggle(settings.openClass);
     const calculateTo = getMatrixValues(calculator, "translate");
-    calculator.classList.toggle(openClass);
+    calculator.classList.toggle(settings.openClass);
 
     // Get target values
     element.style.transition = 'none';
-    element.classList.toggle(openClass);
+    element.classList.toggle(settings.openClass);
     let target = {
       "translateTo": getMatrixValues(element, "translate"),
       "scaleTo": getMatrixValues(element, "scale"),
       "opacityTo": getCSSValue(element, 'opacity', false, 1),
       "widthTo": getCSSValue(element, 'width', true, false),
     };
-    element.classList.toggle(openClass);
+    element.classList.toggle(settings.openClass);
 
     // X or Y
     const axis = (parseInt(calculateFrom.x, 10) !== parseInt(calculateTo.x, 10)) ? 'x' : 'y';
@@ -255,8 +271,8 @@
   // Get target
   // ==========
 
-  function getTarget(element) {
-    let isController = element.getAttribute('data-touch-controls') || false;
+  function getTarget(element, settings) {
+    const isController = element.getAttribute('data-touch-controls') || false;
     let isCloser = element.getAttribute('data-touch-closes') || false;
 
     if (isCloser) {
@@ -264,14 +280,14 @@
       isCloser = isCloser.split(',');
       isCloser.forEach(function (controller) {
         controller = document.querySelector('[data-touch-id="' + controller + '"]');
-        if (controller.classList.contains(openClass)) {
+        if (controller.classList.contains(settings.openClass)) {
           controllerList.push(controller);
         }
       });
       if (controllerList.length === 1) {
         target = controllerList[0];
       } else {
-        element.click();
+        element.click(); // @TODO: Use toggle instead?
         target = false;
       }
     } else {
@@ -282,11 +298,11 @@
   }
 
 
-  // Get settings
-  // ============
+  // Get values
+  // ==========
 
-  function getSettings(target) {
-    let transitionValues = getTransitionValues(target, target);
+  function getValues(target, settings) {
+    const transitionValues = getTransitionValues(target, target, settings);
     return {
       "transitionValues": transitionValues,
       "translate": getMatrixValues(target, "translate") || 0,
@@ -305,7 +321,7 @@
     let buddylist = target.getAttribute('data-touch-buddies') || false;
 
     // Get controllers list
-    let hasControllers = document.querySelectorAll('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
+    const hasControllers = document.querySelectorAll('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
 
     // Push to buddies
     if (target !== element) {
@@ -337,7 +353,8 @@
   // =====================
 
   function calculateValues(movedX, movedY, transitionValues) {
-    const dir = (settings.axis === 'x') ? movedX : movedY;
+    // @TODO: Make this a better function
+    const dir = (settings2.axis === 'x') ? movedX : movedY;
     return {
       "translateX": ((transitionValues.translate.dir === 'down') ? parseFloat(transitionValues.translate.from.x) - (dir * transitionValues.translate.points) : parseFloat(transitionValues.translate.from.x) + (dir * transitionValues.translate.points)),
       "translateY": ((transitionValues.translate.ydir === 'down') ? parseFloat(transitionValues.translate.from.y) - (dir * transitionValues.translate.ypoints) : parseFloat(transitionValues.translate.from.y) + (dir * transitionValues.translate.ypoints)),
@@ -366,6 +383,7 @@
     element.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + values.scaleX + ',' + values.scaleY + ')';
     element.style.opacity = values.opacity;
     element.style.width = values.width + 'px';
+    // @TODO: use property styling?
   }
 
 
@@ -377,7 +395,7 @@
     let y = translatedY || 0;
     let movedX = Math.abs(touchmoveX - touchstartX);
     let movedY = Math.abs(touchmoveY - touchstartY);
-    let transitionValues = calculateValues(movedX, movedY, settings.transitionValues);
+    let transitionValues = calculateValues(movedX, movedY, settings2.transitionValues);
 
     // Only style if we're inbetween
     if (isBetween) {
@@ -396,7 +414,7 @@
     }
     // @TODO: testing with elastic
     // else {
-    //   let diff = getDifference(y, settings.max);
+    //   let diff = getDifference(y, settings2.max);
     //   console.log(diff);
     //   if (diff < 25) {
     //     let elasticX = x ? x + diff / 2 : x;
@@ -405,7 +423,7 @@
     //   }
     // }
 
-    final = calculateValues(touchmoveX - touchstartX, touchmoveY - touchstartY, settings.transitionValues)
+    final = calculateValues(touchmoveX - touchstartX, touchmoveY - touchstartY, settings2.transitionValues)
   }
 
 
@@ -416,9 +434,8 @@
   function resetValues() {
     touchmoved = false;
     target = false;
-    isBetween = false;
     final = false;
-    settings = [];
+    settings2 = [];
     buddies = [];
     buddiesValues = [];
   }
@@ -440,17 +457,18 @@
   // Handle finished gesture
   // =======================
 
-  function handleGesture(event, target) {
-    const diff = (settings.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
-    const moveFrom = (settings.axis === 'x') ? settings.transitionValues.translate.from.x : settings.transitionValues.translate.from.y;
-    const movedTo = (settings.axis === 'x') ? final.translateX : final.translateY;
+  function handleGesture(event, target, settings) {
+    const diff = (settings2.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
+    const moveFrom = (settings2.axis === 'x') ? settings2.transitionValues.translate.from.x : settings2.transitionValues.translate.from.y;
+    const movedTo = (settings2.axis === 'x') ? final.translateX : final.translateY;
 
-    if (diff > threshold && movedTo > moveFrom) {
-      toggle(target);
+    if (diff > settings.threshold && movedTo > moveFrom) {
+      toggle(target, settings);
     } else {
       resetStyle(target);
     }
 
+    // Emit dragged event
     emitEvent('bipDragged', settings);
 
     // Reset body styling
@@ -458,193 +476,175 @@
   }
 
 
-  // Handle click
-  // ============
-
-  function handleClick(element, targets) {
-    targets.forEach(function (target) {
-      buddies = getBuddies(target, target);
-      toggle(target);
-    });
-  }
-
-
   // Toggle
   // ==============
 
-  function toggle(target) {
+  function toggle(target, settings) {
     resetStyle(target);
-    target.classList.toggle(openClass);
+    target.classList.toggle(settings.openClass);
     // @TODO: set buddies some place else
     if (buddies) {
       buddies.forEach(function (buddy) {
-        if (target.classList.contains(openClass)) {
-          buddy.classList.add(openClass, 'openedby:' + target.getAttribute('data-touch-id'));
+        if (target.classList.contains(settings.openClass)) {
+          buddy.classList.add(settings.openClass, 'openedby:' + target.getAttribute('data-touch-id'));
         } else {
           buddy.classList.remove('openedby:' + target.getAttribute('data-touch-id'));
           let count = (buddy.className.match(/openedby:/g) || []).length;
           if (count === 0) {
-            buddy.classList.remove(openClass);
+            buddy.classList.remove(settings.openClass);
           }
         }
       });
     }
+
+    // Emit toggle event
     emitEvent('bipToggle', settings);
   }
 
 
-  // Default variables
-  // =================
-  // @TODO: Move to global variables
-
-  const gestureZones = '[data-touch], [data-touch-controls], [data-touch-closes]';
-  const controlZones = '[data-touch-controls]';
-  const closeZones = '[data-touch-closes]';
-  const threshold = 35;
-  const openClass = 'is-open';
-  let properties = ['opacity', 'transform']; // @TODO: not is use yet
-  let touchstartX = 0;
-  let touchstartY = 0;
-  let touchendX = 0;
-  let touchendY = 0;
-  let touchmoved = false;
-  let target = false;
-  let isBetween = false;
-  let final = false; // @TODO: not is use yet
-  let settings = [];
-  let buddies = [];
-  let buddiesValues = [];
-  let ignore = false;
-
-
-  // Touch start
-  // ===========
-
-  function touchstartHandler(event) {
-    if (!event.target.closest(gestureZones)) return false;
-    ignore = !!event.target.closest('[data-touch-ignore]');
-    if (ignore) return false;
-
-    // Reset for new touchstart event
-    resetValues();
-
-    // Movement variables
-    touchstartX = event.changedTouches[0].screenX;
-    touchstartY = event.changedTouches[0].screenY;
-    touchmoved = 0;
-    let eventTarget = event.target.closest(gestureZones);
-
-    // Set target
-    // ==========
-    target = getTarget(eventTarget);
-
-    if (target) {
-      settings = getSettings(target);
-      buddies = getBuddies(target, eventTarget) || false;
-    }
-
-    emitEvent('bipDrag', settings);
-
-    // Disable styling
-    document.body.style.overflow = 'hidden';
-  }
-
-
-  // Touch move
-  // ==========
-
-  function touchmoveHandler(event) {
-    if (!event.target.closest(gestureZones)) return false;
-
-    // No action for data-touch-ignore
-    if (ignore) return false;
-    if (!target) return false;
-
-    // Variables
-    let touchmoveX = event.changedTouches[0].screenX;
-    let touchmoveY = event.changedTouches[0].screenY;
-    let translatedX = (settings.axis === 'x') ? touchmoveX - (touchstartX - settings.translate.x) : false;
-    let translatedY = (settings.axis === 'y') ? touchmoveY - (touchstartY - settings.translate.y) : false;
-
-    if (buddies && touchmoved === 0) {
-      buddies.forEach(function (buddy) {
-        buddiesValues.push(getTransitionValues(buddy, target));
-      });
-      touchmoved = 1;
-    }
-
-    isBetween = (settings.axis === 'x') ? translatedX.between(settings.min, settings.max, true) : translatedY.between(settings.min, settings.max, true);
-
-    transitionWithGesture(target, translatedX, translatedY, touchmoveX, touchmoveY, isBetween);
-  }
-
-
-  // Touch end
-  // =========
-
-  function touchendHandler(event) {
-    if (!event.target.closest(gestureZones)) return false;
-
-    // No action for data-touch-ignore
-    if (ignore) return false;
-    if (!target) return false;
-
-    // Variables
-    touchendX = event.changedTouches[0].screenX;
-    touchendY = event.changedTouches[0].screenY;
-    handleGesture(event, target);
-  }
-
-
-  // Click listener
-  // ==============
-
-  function clickHandler(event) {
-
-    if (!event.target.closest(controlZones) && !event.target.closest(closeZones)) return false;
-
-    // Reset for new click event
-    resetValues();
-
-    let targets = [];
-    let controlTarget = event.target.closest(controlZones);
-    let closeTarget = event.target.closest(closeZones);
-
-    if (closeTarget) {
-      let toClose = closeTarget.getAttribute(['data-touch-closes']);
-      toClose = toClose.split(',');
-      toClose.forEach(function (el) {
-        el = document.querySelector('[data-touch-id="' + el + '"]');
-        if (el.classList.contains(openClass)) {
-          targets.push(getTarget(el));
-        }
-      });
-    } else {
-      targets.push(getTarget(controlTarget));
-    }
-
-    handleClick(controlTarget || closeTarget, targets);
-  }
-
-
-  // Constructor
+  /**
+   * Constructor
+   */
 
   return function (selector, options) {
 
     // Unique Variables
-    var publicAPIs = {};
-    var settings;
+    const publicAPIs = {};
+    let settings;
 
-    // Toggle
-    // @TODO: add logic?
-    publicAPIs.toggle = function (id) {
-      toggle(id);
+
+    // Touch start
+    // ===========
+
+    function touchstartHandler(event) {
+
+      // Return false for wrong elements
+      if (!event.target.closest(gestureZones)) return false;
+      ignore = !!event.target.closest('[data-touch-ignore]');
+      if (ignore) return false;
+
+      // Reset for new touchstart event
+      resetValues();
+
+      // Movement variables
+      touchstartX = event.changedTouches[0].screenX;
+      touchstartY = event.changedTouches[0].screenY;
+      touchmoved = 0;
+      const eventTarget = event.target.closest(gestureZones);
+
+      // Set target
+      // ==========
+      target = getTarget(eventTarget, settings);
+
+      if (target) {
+        settings2 = getValues(target, settings);
+        buddies = getBuddies(target, eventTarget) || false;
+      }
+
+      emitEvent('bipDrag', settings);
+
+      // Disable styling
+      document.body.style.overflow = 'hidden';
+    }
+
+
+    // Touch move
+    // ==========
+
+    function touchmoveHandler(event) {
+
+      // Return false for wrong elements
+      if (!event.target.closest(gestureZones)) return false;
+      if (ignore) return false;
+      if (!target) return false;
+
+      // Variables
+      let touchmoveX = event.changedTouches[0].screenX;
+      let touchmoveY = event.changedTouches[0].screenY;
+      let translatedX = (settings2.axis === 'x') ? touchmoveX - (touchstartX - settings2.translate.x) : false;
+      let translatedY = (settings2.axis === 'y') ? touchmoveY - (touchstartY - settings2.translate.y) : false;
+      const isBetween = (settings2.axis === 'x') ? translatedX.between(settings2.min, settings2.max, true) : translatedY.between(settings2.min, settings2.max, true);
+
+      if (buddies && touchmoved === 0) {
+        buddies.forEach(function (buddy) {
+          buddiesValues.push(getTransitionValues(buddy, target, settings));
+        });
+        touchmoved = 1;
+      }
+
+
+      transitionWithGesture(target, translatedX, translatedY, touchmoveX, touchmoveY, isBetween);
+    }
+
+
+    // Touch end
+    // =========
+
+    function touchendHandler(event) {
+
+      // Return false for wrong elements
+      if (!event.target.closest(gestureZones)) return false;
+      if (ignore) return false;
+      if (!target) return false;
+
+      // Variables
+      touchendX = event.changedTouches[0].screenX;
+      touchendY = event.changedTouches[0].screenY;
+
+      // Handle the gesture
+      handleGesture(event, target, settings);
+    }
+
+
+    // Click listener
+    // ==============
+
+    function clickHandler(event) {
+
+      // Return for wrong elements
+      if (!event.target.closest(settings.controls) && !event.target.closest(settings.closes)) return false;
+
+      // Reset for new click event
+      resetValues();
+
+      // Variables
+      const controlTarget = event.target.closest(settings.controls);
+      const closeTarget = event.target.closest(settings.closes);
+      let targets = [];
+
+      if (closeTarget) {
+        let toClose = closeTarget.getAttribute(['data-touch-closes']);
+        toClose = toClose.split(',');
+        toClose.forEach(function (el) {
+          el = document.querySelector('[data-touch-id="' + el + '"]');
+          if (el.classList.contains(settings.openClass)) {
+            targets.push(getTarget(el, settings));
+          }
+        });
+      } else {
+        targets.push(getTarget(controlTarget, settings));
+      }
+
+      targets.forEach(function (target) {
+        buddies = getBuddies(target, target);
+        toggle(target, settings);
+      });
+    }
+
+
+    /**
+     * Toggle
+     */
+
+    publicAPIs.toggle = function (target) {
+      toggle(target, settings);
     };
 
 
     /**
      * Init
      */
+
     publicAPIs.init = function (options) {
 
       // feature test
@@ -652,6 +652,9 @@
 
       // Merge options into defaults
       settings = extend(defaults, options || {});
+
+      // Set gesture zones
+      gestureZones = settings.selector + ',' + settings.controls + ',' + settings.closes;
 
       // Event listeners
       window.addEventListener('click', clickHandler, true);
