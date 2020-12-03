@@ -30,6 +30,9 @@
     threshold: 35,
     openClass: 'is-open',
 
+    matrixValues: ['translate', 'scale'],
+    cssValues: ['opacity', 'width'],
+
     emitEvents: true
   };
 
@@ -175,13 +178,9 @@
   // Get CSS values
   // ==============
 
-  function getCSSValue(element, type, float, fallback) {
+  function getCSSValue(element, type) {
     let style = window.getComputedStyle(element);
-    if (float) {
-      style = parseFloat(style[type]) || fallback;
-    } else {
-      style = style[type] || fallback;
-    }
+    style = parseFloat(style[type]);
     return style;
   }
 
@@ -198,24 +197,17 @@
   // ================
 
   function getCalculations(from, to, difference, dimension) {
-    let values = {};
-    // @TODO: add to object when 2 (or 3) dimensional?
+    let values = {
+      "from": from,
+      "to": to,
+      "dir": (from < to) ? 'up' : 'down',
+      "points": (getDifference(from, to) / difference),
+    };
     if (dimension === 2) {
-      values = {
-        "from": from,
-        "to": to,
-        "dir": (from.x < to.x) ? 'up' : 'down',
-        "points": (getDifference(from.x, to.x) / difference),
-        "ydir": (from.y < to.y) ? 'up' : 'down',
-        "ypoints": (getDifference(from.y, to.y) / difference),
-      }
-    } else {
-      values = {
-        "from": from,
-        "to": to,
-        "dir": (from < to) ? 'up' : 'down',
-        "points": (getDifference(from, to) / difference),
-      }
+      values.dir = (from.x < to.x) ? 'up' : 'down';
+      values.points = (getDifference(from.x, to.x) / difference);
+      values.ydir = (from.y < to.y) ? 'up' : 'down';
+      values.ypoints = (getDifference(from.y, to.y) / difference);
     }
     return values;
   }
@@ -223,16 +215,14 @@
 
   // Get transition values
   // =====================
-  // @TODO: don't ask to each value separate but run an array of elements instead? | Also for calculatevalues and setstyling
 
   function getTransitionValues(element, calculator, settings) {
 
     // Get initial values
     const calculateFrom = getMatrixValues(calculator, "translate");
-    const translateFrom = getMatrixValues(element, "translate");
-    const scaleFrom = getMatrixValues(element, "scale");
-    const opacityFrom = getCSSValue(element, 'opacity', false, 1);
-    const widthFrom = getCSSValue(element, 'width', true, false);
+    let fromValues = {};
+    settings.matrixValues.forEach(function(prop) { fromValues[prop] = (getMatrixValues(element, prop)) });
+    settings.cssValues.forEach(function(prop) { fromValues[prop] = (getCSSValue(element, prop)) });
 
     // Get calculator value
     calculator.style.transition = 'none';
@@ -243,12 +233,9 @@
     // Get target values
     element.style.transition = 'none';
     element.classList.toggle(settings.openClass);
-    let target = {
-      "translateTo": getMatrixValues(element, "translate"),
-      "scaleTo": getMatrixValues(element, "scale"),
-      "opacityTo": getCSSValue(element, 'opacity', false, 1),
-      "widthTo": getCSSValue(element, 'width', true, false),
-    };
+    let toValues = {};
+    settings.matrixValues.forEach(function(prop) { toValues[prop] = (getMatrixValues(element, prop)) });
+    settings.cssValues.forEach(function(prop) { toValues[prop] = (getCSSValue(element, prop)) });
     element.classList.toggle(settings.openClass);
 
     // X or Y
@@ -257,14 +244,18 @@
     const to = (axis === 'x') ? calculateTo.x : calculateTo.y;
     const difference = getDifference(from, to);
 
-    return {
+    // Set element and axis for object
+    let returnValues = {
       "element": element,
-      "axis": axis,
-      "translate": getCalculations(translateFrom, target.translateTo, difference, 2),
-      "scale": getCalculations(scaleFrom, target.scaleTo, difference, 2),
-      "opacity": getCalculations(opacityFrom, target.opacityTo, difference, 1),
-      "width": getCalculations(widthFrom, target.widthTo, difference, 1),
+      "axis": axis
     };
+
+    // Add properties and values to the object
+    settings.matrixValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 2) });
+    settings.cssValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 1) });
+
+    return returnValues;
+
   }
 
 
@@ -294,6 +285,10 @@
       target = isController ? document.querySelector('[data-touch-id="' + isController + '"]') : element;
     }
 
+    if (target) {
+      buddies = getBuddies(target, element) || false;
+    }
+
     return target;
   }
 
@@ -317,6 +312,7 @@
   // ===========
 
   function getBuddies(target, element) {
+
     // Get target buddies list
     let buddylist = target.getAttribute('data-touch-buddies') || false;
 
@@ -352,62 +348,62 @@
   // Calculate live values
   // =====================
 
-  function calculateValues(movedX, movedY, transitionValues) {
-    // @TODO: Make this a better function
+  function calculateValues(movedX, movedY, transitionValues, settings) {
     const dir = (settings2.axis === 'x') ? movedX : movedY;
-    return {
+    // Calculate matrix properties and values
+    // @TODO: See if we can improve 2 dimensional elements
+    let returnValues = {
       "translateX": ((transitionValues.translate.dir === 'down') ? parseFloat(transitionValues.translate.from.x) - (dir * transitionValues.translate.points) : parseFloat(transitionValues.translate.from.x) + (dir * transitionValues.translate.points)),
       "translateY": ((transitionValues.translate.ydir === 'down') ? parseFloat(transitionValues.translate.from.y) - (dir * transitionValues.translate.ypoints) : parseFloat(transitionValues.translate.from.y) + (dir * transitionValues.translate.ypoints)),
       "scaleX": ((transitionValues.scale.dir === 'down') ? parseFloat(transitionValues.scale.from.x) - (dir * transitionValues.scale.points) : parseFloat(transitionValues.scale.from.x) + (dir * transitionValues.scale.points)),
       "scaleY": ((transitionValues.scale.ydir === 'down') ? parseFloat(transitionValues.scale.from.y) - (dir * transitionValues.scale.ypoints) : parseFloat(transitionValues.scale.from.y) + (dir * transitionValues.scale.ypoints)),
-      "opacity": ((transitionValues.opacity.dir === 'down') ? transitionValues.opacity.from - (dir * transitionValues.opacity.points) : transitionValues.opacity.from + (dir * transitionValues.opacity.points)),
-      "width": ((transitionValues.width.dir === 'down') ? transitionValues.width.from - (dir * transitionValues.width.points) : transitionValues.width.from + (dir * transitionValues.width.points))
-    }
-  }
-
-
-  // Property styling
-  // ================
-
-  function propertyStyling(element, property, value) {
-    element.style.width = values.width + 'px';
+    };
+    // Calculate CSS properties and values
+    settings.cssValues.forEach(function(prop) {
+      returnValues[prop] = ((transitionValues[prop].dir === 'down') ? transitionValues[prop].from - (dir * transitionValues[prop].points) : transitionValues[prop].from + (dir * transitionValues[prop].points));
+    });
+    return returnValues;
   }
 
 
   // Set styling
   // ===========
 
-  function setStyling(element, values, xval, yval) {
+  function setStyling(element, values, settings, xval, yval) {
     let x = xval ? xval : values.translateX;
     let y = yval ? yval : values.translateY;
+
+    // Set Matrix values
     element.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + values.scaleX + ',' + values.scaleY + ')';
-    element.style.opacity = values.opacity;
-    element.style.width = values.width + 'px';
-    // @TODO: use property styling?
+
+    // Set CSS properties and values
+    settings.cssValues.forEach(function(prop) {
+      element.style[prop] = prop !== 'opacity' ? values[prop] + 'px' : values[prop];
+    });
   }
 
 
   // Transitions following the touch
   // ===============================
 
-  function transitionWithGesture(element, translatedX, translatedY, touchmoveX, touchmoveY, isBetween) {
+  function transitionWithGesture(element, translatedX, translatedY, touchmoveX, touchmoveY, isBetween, settings) {
     let x = translatedX || 0;
     let y = translatedY || 0;
     let movedX = Math.abs(touchmoveX - touchstartX);
     let movedY = Math.abs(touchmoveY - touchstartY);
-    let transitionValues = calculateValues(movedX, movedY, settings2.transitionValues);
+    let transitionValues = calculateValues(movedX, movedY, settings2.transitionValues, settings);
 
     // Only style if we're inbetween
     if (isBetween) {
       // The target itself
-      setStyling(element, transitionValues, x, y);
+      setStyling(element, transitionValues, settings, x, y);
 
       // It's buddies
       if (buddies) {
         buddies.forEach(function (buddy, i) {
           let count = (buddy.className.match(/openedby:/g) || []).length;
           if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute('data-touch-id')))) {
-            setStyling(buddy, calculateValues(movedX, movedY, buddiesValues[i]));
+            setStyling(buddy, calculateValues(movedX, movedY, buddiesValues[i], settings), settings);
           }
         });
       }
@@ -419,11 +415,11 @@
     //   if (diff < 25) {
     //     let elasticX = x ? x + diff / 2 : x;
     //     let elasticY = y ? y + diff / 2 : y;
-    //     setStyling(element, transitionValues, elasticX, elasticY);
+    //     setStyling(element, transitionValues, settings, elasticX, elasticY);
     //   }
     // }
 
-    final = calculateValues(touchmoveX - touchstartX, touchmoveY - touchstartY, settings2.transitionValues)
+    final = calculateValues(touchmoveX - touchstartX, touchmoveY - touchstartY, settings2.transitionValues, settings, settings)
   }
 
 
@@ -480,10 +476,18 @@
   // ==============
 
   function toggle(target, settings) {
+
+    // Get buddies if non are defined
+    if (buddies.length === 0) {
+      buddies = getBuddies(target, target);
+    }
+
+    // Reset target (and buddies)
     resetStyle(target);
     target.classList.toggle(settings.openClass);
-    // @TODO: set buddies some place else
-    if (buddies) {
+
+    // Handle buddies
+    if (buddies.length > 0) {
       buddies.forEach(function (buddy) {
         if (target.classList.contains(settings.openClass)) {
           buddy.classList.add(settings.openClass, 'openedby:' + target.getAttribute('data-touch-id'));
@@ -538,7 +542,6 @@
 
       if (target) {
         settings2 = getValues(target, settings);
-        buddies = getBuddies(target, eventTarget) || false;
       }
 
       emitEvent('bipDrag', settings);
@@ -572,8 +575,7 @@
         touchmoved = 1;
       }
 
-
-      transitionWithGesture(target, translatedX, translatedY, touchmoveX, touchmoveY, isBetween);
+      transitionWithGesture(target, translatedX, translatedY, touchmoveX, touchmoveY, isBetween, settings);
     }
 
 
@@ -626,7 +628,6 @@
       }
 
       targets.forEach(function (target) {
-        buddies = getBuddies(target, target);
         toggle(target, settings);
       });
     }
