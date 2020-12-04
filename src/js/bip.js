@@ -27,7 +27,7 @@
     controls: '[data-touch-controls]',
     closes: '[data-touch-closes]',
 
-    threshold: 35,
+    threshold: 0.2,
     openClass: 'is-open',
 
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
@@ -259,7 +259,8 @@
     // Set element and axis for object
     let returnValues = {
       "element": element,
-      "axis": axis
+      "axis": axis,
+      "difference": difference
     };
 
     // Add properties and values to the object
@@ -478,8 +479,9 @@
     const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
     const moveFrom = (targetValues.axis === 'x') ? targetValues.transitionValues.translate.from.x : targetValues.transitionValues.translate.from.y;
     const movedTo = (targetValues.axis === 'x') ? final.translateX : final.translateY;
+    const threshold = targetValues.transitionValues.difference * settings.threshold;
 
-    if (diff > settings.threshold && movedTo > moveFrom && moveDirection === 'forward') {
+    if (diff > threshold && movedTo > moveFrom && moveDirection === 'forward') {
       toggle(target, settings);
     } else {
       resetStyle(target);
