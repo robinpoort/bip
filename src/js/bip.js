@@ -375,7 +375,9 @@
     };
     // Calculate CSS properties and values
     settings.cssValues.forEach(function(prop) {
-      returnValues[prop] = ((transitionValues[prop].dir === 'down') ? transitionValues[prop].from - (dir * transitionValues[prop].points) : transitionValues[prop].from + (dir * transitionValues[prop].points));
+      if (transitionValues[prop].points !== 0) {
+        returnValues[prop] = ((transitionValues[prop].dir === 'down') ? transitionValues[prop].from - (dir * transitionValues[prop].points) : transitionValues[prop].from + (dir * transitionValues[prop].points));
+      }
     });
     return returnValues;
   }
@@ -393,7 +395,9 @@
 
     // Set CSS properties and values
     settings.cssValues.forEach(function(prop) {
-      element.style[prop] = prop !== 'opacity' ? values[prop] + 'px' : values[prop];
+      if (values[prop] !== undefined) {
+        element.style[prop] = prop !== 'opacity' ? values[prop] + 'px' : values[prop];
+      }
     });
   }
 
