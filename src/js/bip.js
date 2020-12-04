@@ -668,6 +668,9 @@
 
       if (manuallyClosed) {
         event.preventDefault();
+
+        // Re-set manually closed for next event
+        manuallyClosed = false;
       }
 
       // Return for wrong elements
