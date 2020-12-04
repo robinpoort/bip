@@ -50,6 +50,7 @@
   let buddies = [];
   let buddiesValues = [];
   let ignore = false;
+  let manuallyClosed = false;
 
 
   // Closest polyfill
@@ -291,11 +292,6 @@
       if (controllerList.length === 1) {
         target = controllerList[0];
       } else {
-        document.querySelectorAll('[data-touch]').forEach(function(el) {
-          if (el.classList.contains(settings.openClass)) {
-            toggle(el, settings);
-          }
-        });
         target = false;
       }
     } else {
@@ -304,6 +300,13 @@
 
     if (target) {
       buddies = getBuddies(target, element) || false;
+    } else {
+      document.querySelectorAll('[data-touch]').forEach(function(el) {
+        if (el.classList.contains(settings.openClass)) {
+          toggle(el, settings);
+        }
+      });
+      manuallyClosed = true;
     }
 
     return target;
@@ -457,6 +460,7 @@
     moveDirection = 'forward';
     target = false;
     final = false;
+    manuallyClosed = false;
     targetValues = [];
     buddies = [];
     buddiesValues = [];
@@ -587,12 +591,12 @@
 
       if (target) {
         targetValues = getValues(target, settings);
+
+        emitEvent('bipDrag', settings);
+
+        // Disable styling
+        document.body.style.overflow = 'hidden';
       }
-
-      emitEvent('bipDrag', settings);
-
-      // Disable styling
-      document.body.style.overflow = 'hidden';
     }
 
 
@@ -662,11 +666,17 @@
 
     function clickHandler(event) {
 
+      if (manuallyClosed) {
+        event.preventDefault();
+      }
+
       // Return for wrong elements
       if (!event.target.closest(settings.controls) && !event.target.closest(settings.closes)) return false;
 
       // Reset for new click event
       resetValues();
+
+      event.preventDefault();
 
       // Variables
       const controlTarget = event.target.closest(settings.controls);

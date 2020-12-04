@@ -42,11 +42,15 @@
         opacity: 0;
         transition: opacity 300ms ease-out, transform 300ms ease-out, height 300ms ease-out;
         transform: scale(.6);
+        pointer-events: none;
+        touch-action: none;
     }
 
     .overlay.is-open {
         opacity: 1;
         transform: scale(1);
+         pointer-events: auto;
+         touch-action: manipulation;
         /*height: 80%;*/
     }
 
@@ -136,10 +140,43 @@
         left: 100%;
     }
 
+    .testbutton {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+    }
+
+    .sk-checkbox label {
+        background: #fff;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.25rem;
+        border: 1px solid #bbb;
+        border-radius: .33em;
+        line-height: 1em;
+        padding: 0 .25em;
+    }
+
+    .sk-checkbox:checked + label {
+        border-color: red;
+        color: black;
+        background: red;
+    }
+
 </style>
 <body>
 
 <div class="wrapper">
+
+
+    <div class="testbutton sk-checkbox">
+        <input id="checkbox-b-0" type="checkbox">
+        <label for="checkbox-b-0">Sand and save</label>
+    </div>
+
+
     <div class="overlay" data-touch-id="overlay" data-touch-closes="top,right,bottom,left"></div>
     <div class="top" data-touch data-touch-id="top" data-touch-buddies="overlay">
         <button type="button" data-touch-controls="top">Toggle</button>
