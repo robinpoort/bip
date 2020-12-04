@@ -291,7 +291,11 @@
       if (controllerList.length === 1) {
         target = controllerList[0];
       } else {
-        element.click(); // @TODO: Use toggle instead?
+        document.querySelectorAll('[data-touch]').forEach(function(el) {
+          if (el.classList.contains(settings.openClass)) {
+            toggle(el, settings);
+          }
+        });
         target = false;
       }
     } else {
