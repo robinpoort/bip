@@ -42,7 +42,7 @@
   let touchendY = 0;
   let touchmoved = false;
   let lastDifference = false;
-  let moveDirection = false;
+  let moveDirection = 'forward';
   let gestureZones = false;
   let target = false;
   let final = false;
@@ -449,7 +449,7 @@
   function resetValues() {
     touchmoved = false;
     lastDifference = false;
-    moveDirection = false;
+    moveDirection = 'forward';
     target = false;
     final = false;
     targetValues = [];
