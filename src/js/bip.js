@@ -143,73 +143,57 @@
 
   // Get matrix values
   // =================
-  // @TODO: Improve this function
 
   function getMatrixValues(element, type) {
     const style = window.getComputedStyle(element);
     const matrix = style['transform'] || style.webkitTransform || style.mozTransform;
+    let value = {
+      delay: getTransitionValue('transitionDelay', style, 'transform'),
+      duration: getTransitionValue('transitionDuration', style, 'transform')
+    };
 
     // No transform property set
-    if (matrix === 'none' && (type === 'translate' || type === 'rotate' || type === 'skew')) {
-      return {
-        value: {
+    if (matrix === 'none') {
+      if (type === 'translate' || type === 'rotate' || type === 'skew') {
+        value.value = {
           x: 0,
           y: 0,
-          delay: getTransitionValue('transitionDelay', style, 'transform'),
-          duration: getTransitionValue('transitionDuration', style, 'transform')
         }
-      }
-    } else if (matrix === 'none' && type === 'scale') {
-      return {
-        value: {
+      } else if (type === 'scale') {
+        value.value = {
           x: 1,
           y: 1,
-          delay: getTransitionValue('transitionDelay', style, 'transform'),
-          duration: getTransitionValue('transitionDuration', style, 'transform')
         }
       }
+      return value;
     }
 
     const matrixValues = matrix.match(/matrix.*\((.+)\)/)[1].split(', ');
 
     // Set proper values
     if (type === 'translate') {
-      return {
-        value: {
-          x: matrixValues[4],
-          y: matrixValues[5],
-          delay: getTransitionValue('transitionDelay', style, 'transform'),
-          duration: getTransitionValue('transitionDuration', style, 'transform')
-        }
+      value.value = {
+        x: matrixValues[4],
+        y: matrixValues[5],
       }
     } else if (type === 'scale') {
-      return {
-        value: {
-          x: matrixValues[0],
-          y: matrixValues[3],
-          delay: getTransitionValue('transitionDelay', style, 'transform'),
-          duration: getTransitionValue('transitionDuration', style, 'transform')
-        }
+      value.value = {
+        x: matrixValues[0],
+        y: matrixValues[3],
       }
     } else if (type === 'rotate') {
-      return {
-        value: {
-          x: matrixValues[2],
-          y: matrixValues[2],
-          delay: getTransitionValue('transitionDelay', style, 'transform'),
-          duration: getTransitionValue('transitionDuration', style, 'transform')
-        }
+      value.value = {
+        x: matrixValues[2],
+        y: matrixValues[2],
       }
     } else if (type === 'skew') {
-      return {
-        value: {
-          x: matrixValues[1],
-          y: matrixValues[2],
-          delay: getTransitionValue('transitionDelay', style, 'transform'),
-          duration: getTransitionValue('transitionDuration', style, 'transform')
-        }
+      value.value = {
+        x: matrixValues[1],
+        y: matrixValues[2],
       }
     }
+
+    return value;
   }
 
 
