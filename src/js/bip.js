@@ -235,7 +235,7 @@
     let value = 0;
     transition.split(', ').forEach(function(el, i) {
       if (el.includes(type)) {
-        value = transitionValues[i]
+        value = parseFloat(transitionValues[i]) * 1000;
       }
     });
 
@@ -251,21 +251,31 @@
   }
 
 
+  // Calculate points
+  // ================
+
+  function calculatePoints(from, to, difference) {
+    let value = 0;
+    value = (getDifference(from, to) / difference);
+    return value;
+  }
+
+
   // Get calculations
   // ================
 
   function getCalculations(from, to, difference, dimension) {
     let values = {
-      "from": from,
-      "to": to,
-      "dir": (from < to) ? 'up' : 'down',
-      "points": (getDifference(from, to) / difference),
+      "from": from.value,
+      "to": to.value,
+      "dir": (from.value < to.value) ? 'up' : 'down',
+      "points": calculatePoints(from.value, to.value, difference),
     };
     if (dimension === 2) {
-      values.dir = (from.x < to.x) ? 'up' : 'down';
-      values.points = (getDifference(from.x, to.x) / difference);
-      values.ydir = (from.y < to.y) ? 'up' : 'down';
-      values.ypoints = (getDifference(from.y, to.y) / difference);
+      values.dir = (from.value.x < to.value.x) ? 'up' : 'down';
+      values.points = calculatePoints(from.value.x, to.value.x, difference);
+      values.ydir = (from.value.y < to.value.y) ? 'up' : 'down';
+      values.ypoints = calculatePoints(from.value.y, to.value.y, difference);
     }
     return values;
   }
@@ -310,8 +320,8 @@
     };
 
     // Add properties and values to the object
-    settings.matrixValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el].value, toValues[el].value, difference, 2) });
-    settings.cssValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el].value, toValues[el].value, difference, 1) });
+    settings.matrixValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 2) });
+    settings.cssValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 1) });
 
     return returnValues;
 
