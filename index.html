@@ -40,7 +40,7 @@
         height: 100%;
         background: rgba(0, 0, 0, .5);
         opacity: 0;
-        transition: opacity 300ms ease-out, transform 300ms ease-out, height 300ms ease-out;
+        transition: opacity 300ms ease-out 100ms, transform 300ms ease-out, height 300ms ease-out;
         transform: scale(.6);
         pointer-events: none;
         touch-action: none;
@@ -72,7 +72,8 @@
 
     .top.is-open,
     .bottom.is-open {
-        transform: translateY(0) scale(.8);
+        transform: translateY(0);
+        /*transform: translateY(0) scale(.8);*/
         /*width: 100%;*/
         /*height: 400px;*/
         /*top: 50px;*/
@@ -139,44 +140,10 @@
     .left button {
         left: 100%;
     }
-
-    .testbutton {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-    }
-
-    .sk-checkbox label {
-        background: #fff;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 2.25rem;
-        border: 1px solid #bbb;
-        border-radius: .33em;
-        line-height: 1em;
-        padding: 0 .25em;
-    }
-
-    .sk-checkbox:checked + label {
-        border-color: red;
-        color: black;
-        background: red;
-    }
-
 </style>
 <body>
 
 <div class="wrapper">
-
-
-    <div class="testbutton sk-checkbox">
-        <input id="checkbox-b-0" type="checkbox">
-        <label for="checkbox-b-0">Sand and save</label>
-    </div>
-
-
     <div class="overlay" data-touch-id="overlay" data-touch-closes="top,right,bottom,left"></div>
     <div class="top" data-touch data-touch-id="top" data-touch-buddies="overlay">
         <button type="button" data-touch-controls="top">Toggle</button>
@@ -214,7 +181,7 @@
 <!-- initialize -->
 <script type="text/javascript">
   const bip = new Bip('[data-touch]', {
-    cssValues: ['opacity', 'width', 'height', 'top', 'right', 'bottom', 'left']
+    // cssValues: ['opacity', 'width', 'height', 'top', 'right', 'bottom', 'left']
   });
 
   // console.log(bip);

@@ -143,6 +143,7 @@
 
   // Get matrix values
   // =================
+  // @TODO: Improve this function
 
   function getMatrixValues(element, type) {
     const style = window.getComputedStyle(element);
@@ -151,13 +152,21 @@
     // No transform property set
     if (matrix === 'none' && (type === 'translate' || type === 'rotate' || type === 'skew')) {
       return {
-        x: 0,
-        y: 0
+        value: {
+          x: 0,
+          y: 0,
+          delay: getTransitionValue('transitionDelay', style, 'transform'),
+          duration: getTransitionValue('transitionDuration', style, 'transform')
+        }
       }
     } else if (matrix === 'none' && type === 'scale') {
       return {
-        x: 1,
-        y: 1
+        value: {
+          x: 1,
+          y: 1,
+          delay: getTransitionValue('transitionDelay', style, 'transform'),
+          duration: getTransitionValue('transitionDuration', style, 'transform')
+        }
       }
     }
 
@@ -166,23 +175,39 @@
     // Set proper values
     if (type === 'translate') {
       return {
-        x: matrixValues[4],
-        y: matrixValues[5]
+        value: {
+          x: matrixValues[4],
+          y: matrixValues[5],
+          delay: getTransitionValue('transitionDelay', style, 'transform'),
+          duration: getTransitionValue('transitionDuration', style, 'transform')
+        }
       }
     } else if (type === 'scale') {
       return {
-        x: matrixValues[0],
-        y: matrixValues[3]
+        value: {
+          x: matrixValues[0],
+          y: matrixValues[3],
+          delay: getTransitionValue('transitionDelay', style, 'transform'),
+          duration: getTransitionValue('transitionDuration', style, 'transform')
+        }
       }
     } else if (type === 'rotate') {
       return {
-        x: matrixValues[2],
-        y: matrixValues[2],
+        value: {
+          x: matrixValues[2],
+          y: matrixValues[2],
+          delay: getTransitionValue('transitionDelay', style, 'transform'),
+          duration: getTransitionValue('transitionDuration', style, 'transform')
+        }
       }
     } else if (type === 'skew') {
       return {
-        x: matrixValues[1],
-        y: matrixValues[2]
+        value: {
+          x: matrixValues[1],
+          y: matrixValues[2],
+          delay: getTransitionValue('transitionDelay', style, 'transform'),
+          duration: getTransitionValue('transitionDuration', style, 'transform')
+        }
       }
     }
   }
@@ -193,8 +218,28 @@
 
   function getCSSValue(element, type) {
     let style = window.getComputedStyle(element);
-    style = parseFloat(style[type]);
-    return style;
+    return {
+      value: parseFloat(style[type]),
+      delay: getTransitionValue('transitionDelay', style, type),
+      duration: getTransitionValue('transitionDuration', style, type)
+    };
+  }
+
+
+  // Get tansition value
+  // ===================
+
+  function getTransitionValue(prop, style, type) {
+    let transition = style.transition;
+    let transitionValues = style[prop].split(', ');
+    let value = 0;
+    transition.split(', ').forEach(function(el, i) {
+      if (el.includes(type)) {
+        value = transitionValues[i]
+      }
+    });
+
+    return value;
   }
 
 
@@ -252,9 +297,9 @@
     element.classList.toggle(settings.openClass);
 
     // X or Y
-    const axis = (parseInt(calculateFrom.x, 10) !== parseInt(calculateTo.x, 10)) ? 'x' : 'y';
-    const from = (axis === 'x') ? calculateFrom.x : calculateFrom.y;
-    const to = (axis === 'x') ? calculateTo.x : calculateTo.y;
+    const axis = (parseInt(calculateFrom.value.x, 10) !== parseInt(calculateTo.value.x, 10)) ? 'x' : 'y';
+    const from = (axis === 'x') ? calculateFrom.value.x : calculateFrom.value.y;
+    const to = (axis === 'x') ? calculateTo.value.x : calculateTo.value.y;
     const difference = getDifference(from, to);
 
     // Set element and axis for object
@@ -265,8 +310,8 @@
     };
 
     // Add properties and values to the object
-    settings.matrixValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 2) });
-    settings.cssValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 1) });
+    settings.matrixValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el].value, toValues[el].value, difference, 2) });
+    settings.cssValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el].value, toValues[el].value, difference, 1) });
 
     return returnValues;
 
@@ -320,7 +365,7 @@
     const transitionValues = getTransitionValues(target, target, settings);
     return {
       "transitionValues": transitionValues,
-      "translate": getMatrixValues(target, "translate") || 0,
+      "translate": getMatrixValues(target, "translate").value || 0,
       "axis": transitionValues.axis,
       "min": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y),
       "max": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y),
