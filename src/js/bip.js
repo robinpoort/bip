@@ -239,9 +239,14 @@
   // ================
 
   function calculatePoints(from, to, difference) {
-    let value = 0;
-    value = (getDifference(from, to) / difference);
-    return value;
+    // @TODO: Calculate points from delay to transitionend based on master
+    // Add delay points to object
+    // Add end points to object
+    let values = {};
+    values.points = (getDifference(from, to) / difference) || 0;
+    values.delayPoints = 0;
+    values.durationPoints = 0;
+    return values;
   }
 
 
@@ -253,13 +258,13 @@
       "from": from.value,
       "to": to.value,
       "dir": (from.value < to.value) ? 'up' : 'down',
-      "points": calculatePoints(from.value, to.value, difference),
+      "points": calculatePoints(from.value, to.value, difference).points,
     };
     if (dimension === 2) {
       values.dir = (from.value.x < to.value.x) ? 'up' : 'down';
-      values.points = calculatePoints(from.value.x, to.value.x, difference);
+      values.points = calculatePoints(from.value.x, to.value.x, difference).points;
       values.ydir = (from.value.y < to.value.y) ? 'up' : 'down';
-      values.ypoints = calculatePoints(from.value.y, to.value.y, difference);
+      values.ypoints = calculatePoints(from.value.y, to.value.y, difference).points;
     }
     return values;
   }
