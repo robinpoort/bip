@@ -244,8 +244,7 @@
     // Add end points to object
     let values = {};
     values.points = (getDifference(from, to) / difference) || 0;
-    values.delayPoints = 0;
-    values.durationPoints = 0;
+    values.difference = (getDifference(from, to)) || 0;
     return values;
   }
 
@@ -259,12 +258,17 @@
       "to": to.value,
       "dir": (from.value < to.value) ? 'up' : 'down',
       "points": calculatePoints(from.value, to.value, difference).points,
+      "difference": calculatePoints(from.value, to.value, difference).difference,
+      "delay": from.delay,
+      "duration": from.duration,
     };
     if (dimension === 2) {
       values.dir = (from.value.x < to.value.x) ? 'up' : 'down';
       values.points = calculatePoints(from.value.x, to.value.x, difference).points;
+      values.difference = calculatePoints(from.value.x, to.value.x, difference).difference;
       values.ydir = (from.value.y < to.value.y) ? 'up' : 'down';
       values.ypoints = calculatePoints(from.value.y, to.value.y, difference).points;
+      values.ydifference = calculatePoints(from.value.y, to.value.y, difference).difference;
     }
     return values;
   }
@@ -417,6 +421,11 @@
     // Calculate matrix properties and values
     // @TODO: See if we can improve 2 dimensional elements
     let returnValues = {
+      "movedX": movedX,
+      "movedY": movedY,
+      "delay": transitionValues.translate.delay,
+      "duration": transitionValues.translate.duration,
+      "difference": transitionValues.difference,
       "translateX": ((transitionValues.translate.dir === 'down') ? parseFloat(transitionValues.translate.from.x) - (dir * transitionValues.translate.points) : parseFloat(transitionValues.translate.from.x) + (dir * transitionValues.translate.points)),
       "translateY": ((transitionValues.translate.ydir === 'down') ? parseFloat(transitionValues.translate.from.y) - (dir * transitionValues.translate.ypoints) : parseFloat(transitionValues.translate.from.y) + (dir * transitionValues.translate.ypoints)),
       "scaleX": ((transitionValues.scale.dir === 'down') ? parseFloat(transitionValues.scale.from.x) - (dir * transitionValues.scale.points) : parseFloat(transitionValues.scale.from.x) + (dir * transitionValues.scale.points)),
@@ -443,12 +452,45 @@
     let y = yval ? yval : values.translateY;
 
     // Set Matrix values
-    element.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + values.scaleX + ',' + values.scaleY + ') skew(' + values.skewX * 10 + 'deg,' + values.skewY * 10 + 'deg) rotate(' + values.rotate + 'deg)';
+    element.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + values.scaleX + ',' + values.scaleY + ')';
 
     // Set CSS properties and values
     settings.cssValues.forEach(function(prop) {
       if (values[prop] !== undefined) {
         element.style[prop] = prop !== 'opacity' ? values[prop] + 'px' : values[prop];
+      }
+    });
+  }
+
+  function calculateMultiplier(element, value, targetValues, settings) {
+    let t = targetValues.duration;
+    let f = (settings.axis === 'x' ? (targetValues.movedY / (targetValues.difference / 100)) : (targetValues.movedY / (targetValues.difference / 100))) / 100;
+    let d1 = value.delay === 0 ? targetValues.delay : value.delay;
+    let d2 = value.duration === 0 ? targetValues.duration : value.duration;
+    let M = d1 !== 0 ? t/d1 : 1;
+    let K = d1 !== 0 ? d1/t : 1;
+    let D = d2/t;
+    return (f-K)*(M*D);
+  }
+
+  function setBuddyStyling(element, buddyValues, targetValues, settings) {
+    let multiplier = parseFloat(calculateMultiplier(element, buddyValues.scale, targetValues, settings));
+    if (multiplier > 0 && multiplier < 1) {
+      let x = (parseFloat(buddyValues.scale.from.x) < parseFloat(buddyValues.scale.to.x)) ? parseFloat(buddyValues.scale.from.x) + (buddyValues.scale.difference * multiplier) : parseFloat(buddyValues.scale.from.x) - (buddyValues.scale.difference * multiplier);
+      let y = (parseFloat(buddyValues.scale.from.y) < parseFloat(buddyValues.scale.to.y)) ? parseFloat(buddyValues.scale.from.y) + (buddyValues.scale.ydifference * multiplier) : parseFloat(buddyValues.scale.from.y) - (buddyValues.scale.ydifference * multiplier);
+      element.style.transform = 'scale(' + x + ',' + y + ')';
+    }
+    settings.cssValues.forEach(function(prop) {
+      let buddyValue = buddyValues[prop];
+      if (buddyValue !== undefined) {
+        let multiplier = calculateMultiplier(element, buddyValue, targetValues, settings);
+        if (multiplier > 0 && multiplier < 1) {
+          if (buddyValue.from < buddyValue.to) {
+            element.style[prop] = prop !== 'opacity' ? buddyValue.from + buddyValue.difference * multiplier + 'px' : buddyValue.from + buddyValue.difference * multiplier;
+          } else {
+            element.style[prop] = prop !== 'opacity' ? buddyValue.from - buddyValue.difference * multiplier + 'px' : buddyValue.from - buddyValue.difference * multiplier;
+          }
+        }
       }
     });
   }
@@ -474,21 +516,12 @@
         buddies.forEach(function (buddy, i) {
           let count = (buddy.className.match(/openedby:/g) || []).length;
           if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute('data-touch-id')))) {
-            setStyling(buddy, calculateValues(movedX, movedY, buddiesValues[i], settings), settings);
+            // setStyling(buddy, calculateValues(movedX, movedY, buddiesValues[i], settings), settings);
+            setBuddyStyling(buddy, buddiesValues[i], transitionValues, settings);
           }
         });
       }
     }
-    // @TODO: testing with elastic pull
-    // else {
-    //   let diff = getDifference(y, targetValues.max);
-    //   console.log(diff);
-    //   if (diff < 25) {
-    //     let elasticX = x ? x + diff / 2 : x;
-    //     let elasticY = y ? y + diff / 2 : y;
-    //     setStyling(element, transitionValues, settings, elasticX, elasticY);
-    //   }
-    // }
 
     final = calculateValues(touchmoveX - touchstartX, touchmoveY - touchstartY, targetValues.transitionValues, settings, settings)
   }
