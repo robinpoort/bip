@@ -454,7 +454,8 @@
     let delayFactor = delay/targetDuration;
     let durationFactor = duration/targetDuration;
     let X = (factor-delayFactor)*((targetDuration/(duration*durationFactor))*durationFactor);
-    return Math.max(0, Math.min(1, X));
+    X = Math.max(0, Math.min(1, X));
+    return X;
   }
 
 
