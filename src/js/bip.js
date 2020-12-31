@@ -96,9 +96,9 @@
   function extend() {
 
     // Variables
-    var extended = {};
-    var deep = false;
-    var i = 0;
+    let extended = {};
+    let deep = false;
+    let i = 0;
 
     // Check if a deep merge
     if (Object.prototype.toString.call(arguments[0]) === '[object Boolean]') {
@@ -107,7 +107,7 @@
     }
 
     // Merge the object into the extended object
-    var merge = function (obj) {
+    let merge = function (obj) {
       for (var prop in obj) {
         if (obj.hasOwnProperty(prop)) {
           // If property is an object, merge properties
@@ -122,7 +122,7 @@
 
     // Loop through each object and conduct a merge
     for (; i < arguments.length; i++) {
-      var obj = arguments[i];
+      let obj = arguments[i];
       merge(obj);
     }
 
@@ -210,8 +210,8 @@
   }
 
 
-  // Get tansition value
-  // ===================
+  // Get transition value
+  // ====================
 
   function getTransitionValue(prop, style, type) {
     let transition = style.transition;
@@ -222,7 +222,6 @@
         value = parseFloat(transitionValues[i]) * 1000;
       }
     });
-
     return value;
   }
 
@@ -235,10 +234,10 @@
   }
 
 
-  // Calculate points
-  // ================
+  // Calculate difference
+  // ====================
 
-  function calculatePoints(from, to, difference) {
+  function calculateDifference(from, to, difference) {
     // @TODO: Calculate points from delay to transitionend based on master
     // Add delay points to object
     // Add end points to object
@@ -257,18 +256,18 @@
       "from": from.value,
       "to": to.value,
       "dir": (from.value < to.value) ? 'up' : 'down',
-      "points": calculatePoints(from.value, to.value, difference).points,
-      "difference": calculatePoints(from.value, to.value, difference).difference,
+      "points": calculateDifference(from.value, to.value, difference).points,
+      "difference": calculateDifference(from.value, to.value, difference).difference,
       "delay": from.delay,
       "duration": from.duration,
     };
     if (dimension === 2) {
       values.dir = (from.value.x < to.value.x) ? 'up' : 'down';
-      values.points = calculatePoints(from.value.x, to.value.x, difference).points;
-      values.difference = calculatePoints(from.value.x, to.value.x, difference).difference;
+      values.points = calculateDifference(from.value.x, to.value.x, difference).points;
+      values.difference = calculateDifference(from.value.x, to.value.x, difference).difference;
       values.ydir = (from.value.y < to.value.y) ? 'up' : 'down';
-      values.ypoints = calculatePoints(from.value.y, to.value.y, difference).points;
-      values.ydifference = calculatePoints(from.value.y, to.value.y, difference).difference;
+      values.ypoints = calculateDifference(from.value.y, to.value.y, difference).points;
+      values.ydifference = calculateDifference(from.value.y, to.value.y, difference).difference;
     }
     return values;
   }
@@ -444,8 +443,24 @@
   }
 
 
+  // Calculate multiplier
+  // ====================
+
+  function calculateMultiplier(element, value, targetValues, settings) {
+    let targetDuration = targetValues.duration;
+    let factor = (settings.axis === 'x' ? (targetValues.movedX / (targetValues.difference / 100)) : (targetValues.movedY / (targetValues.difference / 100))) / 100;
+    let delay = parseInt(value.delay === 0 ? targetValues.delay : value.delay);
+    let duration = parseInt(value.duration === 0 ? targetValues.duration : value.duration);
+    let delayFactor = delay/targetDuration;
+    let durationFactor = duration/targetDuration;
+    let X = (factor-delayFactor)*((targetDuration/(duration*durationFactor))*durationFactor);
+    return Math.max(0, Math.min(1, X));
+  }
+
+
   // Set styling
   // ===========
+  // @TODO: can we mereg this with setbuddystyling?
 
   function setStyling(element, values, settings, xval, yval) {
     let x = xval ? xval : values.translateX;
@@ -462,34 +477,24 @@
     });
   }
 
-  function calculateMultiplier(element, value, targetValues, settings) {
-    let t = targetValues.duration;
-    let f = (settings.axis === 'x' ? (targetValues.movedY / (targetValues.difference / 100)) : (targetValues.movedY / (targetValues.difference / 100))) / 100;
-    let d1 = value.delay === 0 ? targetValues.delay : value.delay;
-    let d2 = value.duration === 0 ? targetValues.duration : value.duration;
-    let M = d1 !== 0 ? t/d1 : 1;
-    let K = d1 !== 0 ? d1/t : 1;
-    let D = d2/t;
-    return (f-K)*(M*D);
-  }
+
+  // Set buddy styling
+  // =================
+  // @TODO: can we mereg this with setstyling?
 
   function setBuddyStyling(element, buddyValues, targetValues, settings) {
-    let multiplier = parseFloat(calculateMultiplier(element, buddyValues.scale, targetValues, settings));
-    if (multiplier > 0 && multiplier < 1) {
-      let x = (parseFloat(buddyValues.scale.from.x) < parseFloat(buddyValues.scale.to.x)) ? parseFloat(buddyValues.scale.from.x) + (buddyValues.scale.difference * multiplier) : parseFloat(buddyValues.scale.from.x) - (buddyValues.scale.difference * multiplier);
-      let y = (parseFloat(buddyValues.scale.from.y) < parseFloat(buddyValues.scale.to.y)) ? parseFloat(buddyValues.scale.from.y) + (buddyValues.scale.ydifference * multiplier) : parseFloat(buddyValues.scale.from.y) - (buddyValues.scale.ydifference * multiplier);
-      element.style.transform = 'scale(' + x + ',' + y + ')';
-    }
+    let multiplier = calculateMultiplier(element, buddyValues.scale, targetValues, settings);
+    let x = (parseFloat(buddyValues.scale.from.x) < parseFloat(buddyValues.scale.to.x)) ? parseFloat(buddyValues.scale.from.x) + (buddyValues.scale.difference * multiplier) : parseFloat(buddyValues.scale.from.x) - (buddyValues.scale.difference * multiplier);
+    let y = (parseFloat(buddyValues.scale.from.y) < parseFloat(buddyValues.scale.to.y)) ? parseFloat(buddyValues.scale.from.y) + (buddyValues.scale.ydifference * multiplier) : parseFloat(buddyValues.scale.from.y) - (buddyValues.scale.ydifference * multiplier);
+    element.style.transform = 'scale(' + x + ',' + y + ')';
     settings.cssValues.forEach(function(prop) {
       let buddyValue = buddyValues[prop];
       if (buddyValue !== undefined) {
         let multiplier = calculateMultiplier(element, buddyValue, targetValues, settings);
-        if (multiplier > 0 && multiplier < 1) {
-          if (buddyValue.from < buddyValue.to) {
-            element.style[prop] = prop !== 'opacity' ? buddyValue.from + buddyValue.difference * multiplier + 'px' : buddyValue.from + buddyValue.difference * multiplier;
-          } else {
-            element.style[prop] = prop !== 'opacity' ? buddyValue.from - buddyValue.difference * multiplier + 'px' : buddyValue.from - buddyValue.difference * multiplier;
-          }
+        if (buddyValue.from < buddyValue.to) {
+          element.style[prop] = prop !== 'opacity' ? buddyValue.from + buddyValue.difference * multiplier + 'px' : buddyValue.from + buddyValue.difference * multiplier;
+        } else {
+          element.style[prop] = prop !== 'opacity' ? buddyValue.from - buddyValue.difference * multiplier + 'px' : buddyValue.from - buddyValue.difference * multiplier;
         }
       }
     });
@@ -523,6 +528,7 @@
       }
     }
 
+    // @TODO: Make this an object containing separate target and buddies X settings? (so we can calculate remaining time)
     final = calculateValues(touchmoveX - touchstartX, touchmoveY - touchstartY, targetValues.transitionValues, settings, settings)
   }
 
