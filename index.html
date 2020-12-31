@@ -12,6 +12,7 @@
         height: 100%;
         overflow: hidden;
     }
+
     body {
         position: relative;
         margin: 0;
@@ -40,7 +41,7 @@
         height: 100%;
         background: rgba(0, 0, 0, .5);
         opacity: 0;
-        transition: opacity 2500ms linear 1000ms, transform 2500ms linear 1000ms;
+        transition: opacity 800ms linear 200ms, transform 800ms linear 200ms;
         transform: scale(.6);
         pointer-events: none;
         touch-action: none;
@@ -48,9 +49,9 @@
 
     .overlay.is-open {
         opacity: 1;
-            transform: scale(1);
-         pointer-events: auto;
-         touch-action: manipulation;
+        transform: scale(1);
+        pointer-events: auto;
+        touch-action: manipulation;
     }
 
     .top,
@@ -66,7 +67,7 @@
     .top,
     .bottom {
         width: 100%;
-        transition: transform 6000ms linear;
+        transition: transform 1200ms linear;
     }
 
     .top.is-open,
@@ -102,7 +103,7 @@
     .right,
     .left {
         height: 100%;
-        transition: transform 6000ms ease-out;
+        transition: transform 1200ms ease-out;
     }
 
     .right.is-open,
@@ -183,23 +184,23 @@
 
 <!-- initialize -->
 <script type="text/javascript">
-  const bip = new Bip('[data-touch]', {
-    // cssValues: ['opacity', 'width', 'height', 'top', 'right', 'bottom', 'left']
-  });
+    const bip = new Bip('[data-touch]', {
+        // cssValues: ['opacity', 'width', 'height', 'top', 'right', 'bottom', 'left']
+    });
 
-  // console.log(bip);
+    // console.log(bip);
 
-  // bip.toggle(document.querySelector('[data-touch-id="right"'));
+    // bip.toggle(document.querySelector('[data-touch-id="right"'));
 
-  // document.addEventListener('bipToggle', function () {
-  //   console.log('test toggle');
-  // }, false);
-  // document.addEventListener('bipDrag', function () {
-  //   console.log('start drag');
-  // }, false);
-  // document.addEventListener('bipDragged', function () {
-  //   console.log('drag stopped');
-  // }, false);
+    // document.addEventListener('bipToggle', function () {
+    //   console.log('test toggle');
+    // }, false);
+    // document.addEventListener('bipDrag', function () {
+    //   console.log('start drag');
+    // }, false);
+    // document.addEventListener('bipDragged', function () {
+    //   console.log('drag stopped');
+    // }, false);
 
 </script>
 </body>
