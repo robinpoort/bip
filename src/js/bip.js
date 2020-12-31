@@ -446,11 +446,12 @@
   // Calculate multiplier
   // ====================
 
-  function calculateMultiplier(element, value, targetValues, settings) {
-    let targetDuration = targetValues.duration;
-    let factor = (settings.axis === 'x' ? (targetValues.movedX / (targetValues.difference / 100)) : (targetValues.movedY / (targetValues.difference / 100))) / 100;
-    let delay = parseInt(value.delay === 0 ? targetValues.delay : value.delay);
-    let duration = parseInt(value.duration === 0 ? targetValues.duration : value.duration);
+  function calculateMultiplier(element, value, transitionValues) {
+    if (value.points === 0 || (value.points === 0 && value.ypoints === 0)) return false;
+    let targetDuration = transitionValues.duration;
+    let factor = (targetValues.axis === 'x' ? (transitionValues.movedX / (transitionValues.difference / 100)) : (transitionValues.movedY / (transitionValues.difference / 100))) / 100;
+    let delay = parseInt(value.delay === 0 ? transitionValues.delay : value.delay);
+    let duration = parseInt(value.duration === 0 ? transitionValues.duration : value.duration);
     let delayFactor = delay/targetDuration;
     let durationFactor = duration/targetDuration;
     let X = (factor-delayFactor)*((targetDuration/(duration*durationFactor))*durationFactor);
@@ -461,7 +462,7 @@
 
   // Set styling
   // ===========
-  // @TODO: can we mereg this with setbuddystyling?
+  // @TODO: can we merge this with setbuddystyling?
 
   function setStyling(element, values, settings, xval, yval) {
     let x = xval ? xval : values.translateX;
@@ -481,17 +482,17 @@
 
   // Set buddy styling
   // =================
-  // @TODO: can we mereg this with setstyling?
+  // @TODO: can we merge this with setstyling?
 
-  function setBuddyStyling(element, buddyValues, targetValues, settings) {
-    let multiplier = calculateMultiplier(element, buddyValues.scale, targetValues, settings);
+  function setBuddyStyling(element, buddyValues, transitionValues, settings) {
+    let multiplier = calculateMultiplier(element, buddyValues.scale, transitionValues);
     let x = (parseFloat(buddyValues.scale.from.x) < parseFloat(buddyValues.scale.to.x)) ? parseFloat(buddyValues.scale.from.x) + (buddyValues.scale.difference * multiplier) : parseFloat(buddyValues.scale.from.x) - (buddyValues.scale.difference * multiplier);
     let y = (parseFloat(buddyValues.scale.from.y) < parseFloat(buddyValues.scale.to.y)) ? parseFloat(buddyValues.scale.from.y) + (buddyValues.scale.ydifference * multiplier) : parseFloat(buddyValues.scale.from.y) - (buddyValues.scale.ydifference * multiplier);
     element.style.transform = 'scale(' + x + ',' + y + ')';
     settings.cssValues.forEach(function(prop) {
       let buddyValue = buddyValues[prop];
       if (buddyValue !== undefined) {
-        let multiplier = calculateMultiplier(element, buddyValue, targetValues, settings);
+        let multiplier = calculateMultiplier(element, buddyValue, transitionValues);
         if (buddyValue.from < buddyValue.to) {
           element.style[prop] = prop !== 'opacity' ? buddyValue.from + buddyValue.difference * multiplier + 'px' : buddyValue.from + buddyValue.difference * multiplier;
         } else {
@@ -522,7 +523,6 @@
         buddies.forEach(function (buddy, i) {
           let count = (buddy.className.match(/openedby:/g) || []).length;
           if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute('data-touch-id')))) {
-            // setStyling(buddy, calculateValues(movedX, movedY, buddiesValues[i], settings), settings);
             setBuddyStyling(buddy, buddiesValues[i], transitionValues, settings);
           }
         });
