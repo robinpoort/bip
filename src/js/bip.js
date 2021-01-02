@@ -574,6 +574,9 @@
     const movedTo = (targetValues.axis === 'x') ? final.translateX : final.translateY;
     const threshold = targetValues.transitionValues.difference * settings.threshold;
 
+    // Add the transitioning class
+    target.classList.add(settings.transitioningClass);
+
     if (diff > threshold && movedTo > moveFrom && moveDirection === 'forward') {
       toggle(target, settings);
     } else {
@@ -585,6 +588,11 @@
 
     // Reset body styling
     document.body.removeAttribute('style');
+
+    // Remove the transitioning class
+    target.ontransitionend = function() {
+      target.classList.remove(settings.transitioningClass);
+    }
   }
 
 
