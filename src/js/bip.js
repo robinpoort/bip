@@ -29,6 +29,7 @@
 
     threshold: 0.2,
     openClass: 'is-open',
+    transitioningClass: 'is-transitioning',
 
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
@@ -673,6 +674,9 @@
       // ==========
       target = getTarget(eventTarget, settings);
 
+      // Return false if target is already transitioning
+      if (target.classList.contains(settings.transitioningClass)) return false;
+
       if (target) {
         targetValues = getValues(target, settings);
 
@@ -784,7 +788,11 @@
       }
 
       targets.forEach(function (target) {
+        target.classList.add(settings.transitioningClass);
         toggle(target, settings);
+        target.ontransitionend = function() {
+          target.classList.remove(settings.transitioningClass);
+        }
       });
     }
 
