@@ -41,7 +41,7 @@
   let touchstartY = 0;
   let touchendX = 0;
   let touchendY = 0;
-  let touchmoved = false;
+  let touchmoved = 0;
   let lastDifference = false;
   let moveDirection = 'forward';
   let gestureZones = false;
@@ -51,7 +51,10 @@
   let buddies = [];
   let buddiesValues = [];
   let ignore = false;
-  let manuallyClosed = false;
+  let programmaticallyClosed = false;
+
+  // @TODO: merge buddies + buddiesValues into one?
+  // @TODO: Same for target?
 
 
   // Closest polyfill
@@ -155,15 +158,28 @@
 
     // No transform property set
     if (matrix === 'none') {
-      if (type === 'translate' || type === 'rotate' || type === 'skew') {
+      if (type === 'translate') {
         value.value = {
           x: 0,
           y: 0,
+          unit: 'px'
         }
       } else if (type === 'scale') {
         value.value = {
           x: 1,
           y: 1,
+          unit: ''
+        }
+      } else if (type === 'skew') {
+        value.value = {
+          x: 0,
+          y: 0,
+          unit: 'deg'
+        }
+      } else if (type === 'rotate') {
+        value.value = {
+          x: 1,
+          unit: 'deg'
         }
       }
       return value;
@@ -176,21 +192,24 @@
       value.value = {
         x: matrixValues[4],
         y: matrixValues[5],
+        unit: 'px'
       }
     } else if (type === 'scale') {
       value.value = {
         x: matrixValues[0],
         y: matrixValues[3],
+        unit: ''
       }
     } else if (type === 'rotate') {
       value.value = {
-        x: matrixValues[2],
-        y: matrixValues[2],
+        x: Math.round(Math.atan2(matrixValues[1], matrixValues[0]) * (180/Math.PI)),
+        unit: 'deg'
       }
     } else if (type === 'skew') {
       value.value = {
         x: matrixValues[1],
         y: matrixValues[2],
+        unit: 'deg'
       }
     }
 
@@ -205,6 +224,7 @@
     let style = window.getComputedStyle(element);
     return {
       value: parseFloat(style[type]),
+      unit: style[type].replace(/\d+|[.]/g, ''),
       delay: getTransitionValue('transitionDelay', style, type),
       duration: getTransitionValue('transitionDuration', style, type)
     };
@@ -239,9 +259,6 @@
   // ====================
 
   function calculateDifference(from, to, difference) {
-    // @TODO: Calculate points from delay to transitionend based on master
-    // Add delay points to object
-    // Add end points to object
     let values = {};
     values.points = (getDifference(from, to) / difference) || 0;
     values.difference = (getDifference(from, to)) || 0;
@@ -256,6 +273,7 @@
     let values = {
       "from": from.value,
       "to": to.value,
+      "unit": to.unit || '',
       "dir": (from.value < to.value) ? 'up' : 'down',
       "points": calculateDifference(from.value, to.value, difference).points,
       "difference": calculateDifference(from.value, to.value, difference).difference,
@@ -263,6 +281,7 @@
       "duration": from.duration,
     };
     if (dimension === 2) {
+      values.unit = to.value.unit;
       values.dir = (from.value.x < to.value.x) ? 'up' : 'down';
       values.points = calculateDifference(from.value.x, to.value.x, difference).points;
       values.difference = calculateDifference(from.value.x, to.value.x, difference).difference;
@@ -325,13 +344,15 @@
   // ==========
 
   function getTarget(element, settings) {
-    const isController = element.getAttribute('data-touch-controls') || false;
-    let isCloser = element.getAttribute('data-touch-closes') || false;
+    // See if element is either a controller or closing element
+    const isControllerEl = element.getAttribute('data-touch-controls') || false;
+    let isClosingEl = element.getAttribute('data-touch-closes') || false;
 
-    if (isCloser) {
+    // When element is a closing element
+    if (isClosingEl) {
       let controllerList = [];
-      isCloser = isCloser.split(',');
-      isCloser.forEach(function (controller) {
+      isClosingEl = isClosingEl.split(',');
+      isClosingEl.forEach(function (controller) {
         controller = document.querySelector('[data-touch-id="' + controller + '"]');
         if (controller.classList.contains(settings.openClass)) {
           controllerList.push(controller);
@@ -343,7 +364,7 @@
         target = false;
       }
     } else {
-      target = isController ? document.querySelector('[data-touch-id="' + isController + '"]') : element;
+      target = isControllerEl ? document.querySelector('[data-touch-id="' + isControllerEl + '"]') : element;
     }
 
     if (target) {
@@ -354,25 +375,10 @@
           toggle(el, settings);
         }
       });
-      manuallyClosed = true;
+      programmaticallyClosed = true;
     }
 
     return target;
-  }
-
-
-  // Get values
-  // ==========
-
-  function getValues(target, settings) {
-    const transitionValues = getTransitionValues(target, target, settings);
-    return {
-      "transitionValues": transitionValues,
-      "translate": getMatrixValues(target, "translate").value || 0,
-      "axis": transitionValues.axis,
-      "min": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y),
-      "max": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y),
-    };
   }
 
 
@@ -386,11 +392,6 @@
 
     // Get controllers list
     const hasControllers = document.querySelectorAll('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
-
-    // Push to buddies
-    if (target !== element) {
-      buddies.push(element);
-    }
 
     if (hasControllers) {
       hasControllers.forEach(function (controller) {
@@ -410,6 +411,22 @@
     }
 
     return buddies;
+  }
+
+
+  // Get values
+  // ==========
+
+  function getValues(target, settings) {
+    const transitionValues = getTransitionValues(target, target, settings);
+    console.log('vals', transitionValues);
+    return {
+      "transitionValues": transitionValues,
+      "translate": getMatrixValues(target, "translate").value || 0,
+      "axis": transitionValues.axis,
+      "min": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y),
+      "max": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y),
+    };
   }
 
 
@@ -468,9 +485,8 @@
   function setStyling(element, values, settings, xval, yval) {
     let x = xval ? xval : values.translateX;
     let y = yval ? yval : values.translateY;
-
     // Set Matrix values
-    element.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + values.scaleX + ',' + values.scaleY + ')';
+    element.style.transform = 'translateX(' + x + 'px) translateY('+ y + 'px) scaleX(' + values.scaleX + ') scaleY(' + values.scaleY + ') rotate(' + values.scaleX + 'deg)';
 
     // Set CSS properties and values
     settings.cssValues.forEach(function(prop) {
@@ -478,6 +494,7 @@
         element.style[prop] = prop !== 'opacity' ? values[prop] + 'px' : values[prop];
       }
     });
+    return calculateMultiplier(element, targetValues, values);
   }
 
 
@@ -486,18 +503,27 @@
   // @TODO: can we merge this with setstyling?
 
   function setBuddyStyling(element, buddyValues, transitionValues, settings) {
-    let multiplier = calculateMultiplier(element, buddyValues.scale, transitionValues);
-    let x = (parseFloat(buddyValues.scale.from.x) < parseFloat(buddyValues.scale.to.x)) ? parseFloat(buddyValues.scale.from.x) + (buddyValues.scale.difference * multiplier) : parseFloat(buddyValues.scale.from.x) - (buddyValues.scale.difference * multiplier);
-    let y = (parseFloat(buddyValues.scale.from.y) < parseFloat(buddyValues.scale.to.y)) ? parseFloat(buddyValues.scale.from.y) + (buddyValues.scale.ydifference * multiplier) : parseFloat(buddyValues.scale.from.y) - (buddyValues.scale.ydifference * multiplier);
-    element.style.transform = 'scale(' + x + ',' + y + ')';
+    let transforms = [];
+    settings.matrixValues.forEach(function(prop) {
+      let multiplier = calculateMultiplier(element, buddyValues[prop], transitionValues);
+      if (multiplier) {
+        // console.log(buddyValues[prop]);
+        let x = (parseFloat(buddyValues[prop].from.x) < parseFloat(buddyValues[prop].to.x)) ? parseFloat(buddyValues[prop].from.x) + (buddyValues[prop].difference * multiplier) : parseFloat(buddyValues[prop].from.x) - (buddyValues[prop].difference * multiplier);
+        let y = (parseFloat(buddyValues[prop].from.y) < parseFloat(buddyValues[prop].to.y)) ? parseFloat(buddyValues[prop].from.y) + (buddyValues[prop].ydifference * multiplier) : parseFloat(buddyValues[prop].from.y) - (buddyValues[prop].ydifference * multiplier) || false;
+        transforms.push(prop +'(' + x + buddyValues[prop].unit + (y ? ',' + y + buddyValues[prop].unit + ')' : ')'));
+      }
+    });
+    transforms = transforms.join(' ');
+    console.log(transforms);
+    element.style.transform = transforms;
     settings.cssValues.forEach(function(prop) {
       let buddyValue = buddyValues[prop];
       if (buddyValue !== undefined) {
         let multiplier = calculateMultiplier(element, buddyValue, transitionValues);
         if (buddyValue.from < buddyValue.to) {
-          element.style[prop] = prop !== 'opacity' ? buddyValue.from + buddyValue.difference * multiplier + 'px' : buddyValue.from + buddyValue.difference * multiplier;
+          element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
         } else {
-          element.style[prop] = prop !== 'opacity' ? buddyValue.from - buddyValue.difference * multiplier + 'px' : buddyValue.from - buddyValue.difference * multiplier;
+          element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
         }
       }
     });
@@ -517,14 +543,15 @@
     // Only style if we're inbetween
     if (isBetween) {
       // The target itself
-      setStyling(element, transitionValues, settings, x, y);
+      let targetStyling = setStyling(element, transitionValues, settings, x, y);
 
       // It's buddies
       if (buddies) {
         buddies.forEach(function (buddy, i) {
           let count = (buddy.className.match(/openedby:/g) || []).length;
           if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute('data-touch-id')))) {
-            setBuddyStyling(buddy, buddiesValues[i], transitionValues, settings);
+            let styling = setBuddyStyling(buddy, buddiesValues[i], transitionValues, settings);
+            buddiesValues[i].elapsedTime = styling;
           }
         });
       }
@@ -540,20 +567,64 @@
   // @TODO: work with global variables?
 
   function resetValues() {
-    touchmoved = false;
+    touchmoved = 0;
     lastDifference = false;
     moveDirection = 'forward';
     target = false;
     final = false;
-    manuallyClosed = false;
+    programmaticallyClosed = false;
     targetValues = [];
     buddies = [];
     buddiesValues = [];
   }
 
 
+  // Toggle
+  // ======
+  // @TODO: Add remaining duration here
+
+  function toggle(target, settings) {
+
+    // Get buddies if non are defined
+    if (buddies.length === 0) {
+      buddies = getBuddies(target, target);
+    }
+
+    // Reset target (and buddies)
+    resetStyle(target);
+    target.classList.toggle(settings.openClass);
+
+    // @TODO: Set remaining duration for each attributeas follows (probably) 'transitionDuration: 200ms, 400ms' etc.
+
+    // Handle buddies
+    if (buddies.length > 0) {
+      buddies.forEach(function (buddy) {
+        if (target.classList.contains(settings.openClass)) {
+          buddy.classList.add(settings.openClass, 'openedby:' + target.getAttribute('data-touch-id'));
+        } else {
+          buddy.classList.remove('openedby:' + target.getAttribute('data-touch-id'));
+          let count = (buddy.className.match(/openedby:/g) || []).length;
+          if (count === 0) {
+            buddy.classList.remove(settings.openClass);
+          }
+        }
+      });
+    }
+
+    // Get controller
+    const controller = document.querySelector('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
+    if (controller) {
+      setAria(controller, settings);
+    }
+
+    // Emit toggle event
+    emitEvent('bipToggle', settings);
+  }
+
+
   // Reset styling
   // =============
+  // @TODO: Add remaining duration here
 
   function resetStyle(target) {
     target.removeAttribute('style');
@@ -592,47 +663,8 @@
     // Remove the transitioning class
     target.ontransitionend = function() {
       target.classList.remove(settings.transitioningClass);
+      target.removeAttribute('style');
     }
-  }
-
-
-  // Toggle
-  // ======
-
-  function toggle(target, settings) {
-
-    // Get buddies if non are defined
-    if (buddies.length === 0) {
-      buddies = getBuddies(target, target);
-    }
-
-    // Reset target (and buddies)
-    resetStyle(target);
-    target.classList.toggle(settings.openClass);
-
-    // Handle buddies
-    if (buddies.length > 0) {
-      buddies.forEach(function (buddy) {
-        if (target.classList.contains(settings.openClass)) {
-          buddy.classList.add(settings.openClass, 'openedby:' + target.getAttribute('data-touch-id'));
-        } else {
-          buddy.classList.remove('openedby:' + target.getAttribute('data-touch-id'));
-          let count = (buddy.className.match(/openedby:/g) || []).length;
-          if (count === 0) {
-            buddy.classList.remove(settings.openClass);
-          }
-        }
-      });
-    }
-
-    // Get controller
-    const controller = document.querySelector('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
-    if (controller) {
-      setAria(controller, settings);
-    }
-
-    // Emit toggle event
-    emitEvent('bipToggle', settings);
   }
 
 
@@ -675,12 +707,13 @@
       // Movement variables
       touchstartX = event.changedTouches[0].screenX;
       touchstartY = event.changedTouches[0].screenY;
-      touchmoved = 0;
       const eventTarget = event.target.closest(gestureZones);
 
       // Set target
       // ==========
       target = getTarget(eventTarget, settings);
+
+      if (!target) return false;
 
       // Return false if target is already transitioning
       if (target.classList.contains(settings.transitioningClass)) return false;
@@ -688,6 +721,7 @@
       if (target) {
         targetValues = getValues(target, settings);
 
+        // Emit event
         emitEvent('bipDrag', settings);
 
         // Disable styling
@@ -705,6 +739,9 @@
       if (!event.target.closest(gestureZones)) return false;
       if (ignore) return false;
       if (!target) return false;
+
+      // Return false if target is already transitioning
+      if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Variables
       let touchmoveX = event.changedTouches[0].screenX;
@@ -748,6 +785,9 @@
       if (ignore) return false;
       if (!target) return false;
 
+      // Return false if target is already transitioning
+      if (target.classList.contains(settings.transitioningClass)) return false;
+
       // Variables
       touchendX = event.changedTouches[0].screenX;
       touchendY = event.changedTouches[0].screenY;
@@ -762,11 +802,12 @@
 
     function clickHandler(event) {
 
-      if (manuallyClosed) {
+      // Prevent when element is manually closed
+      if (programmaticallyClosed) {
         event.preventDefault();
 
         // Re-set manually closed for next event
-        manuallyClosed = false;
+        programmaticallyClosed = false;
       }
 
       // Return for wrong elements
@@ -795,6 +836,7 @@
         targets.push(getTarget(controlTarget, settings));
       }
 
+      // Handle targets
       targets.forEach(function (target) {
         target.classList.add(settings.transitioningClass);
         toggle(target, settings);
@@ -808,6 +850,7 @@
     /**
      * Toggle
      */
+    // @TODO: add open and close functions?
 
     publicAPIs.toggle = function (target) {
       toggle(target, settings);
@@ -829,6 +872,7 @@
       // Set gesture zones
       gestureZones = settings.selector + ',' + settings.controls + ',' + settings.closes;
 
+      // Set aria
       document.querySelectorAll(settings.controls).forEach(function(control) {
         setAria(control, settings);
       });

@@ -41,7 +41,7 @@
         height: 100%;
         background: rgba(0, 0, 0, .5);
         opacity: 0;
-        transition: opacity 800ms linear 200ms, transform 800ms linear 200ms;
+        transition: opacity 800ms linear 200ms, transform 800ms linear 200ms, width 1200ms linear;
         transform: scale(.6);
         pointer-events: none;
         touch-action: none;
@@ -49,9 +49,10 @@
 
     .overlay.is-open {
         opacity: 1;
-        transform: scale(1);
+        transform: scale(1) translateX(50%);
         pointer-events: auto;
         touch-action: manipulation;
+        width: 50%;
     }
 
     .top,
@@ -72,7 +73,7 @@
 
     .top.is-open,
     .bottom.is-open {
-        transform: translateY(0);
+        transform: translateY(0) scaleX(1.25) rotate(20deg);
     }
 
     .top button,
@@ -185,7 +186,7 @@
 <!-- initialize -->
 <script type="text/javascript">
     const bip = new Bip('[data-touch]', {
-        // cssValues: ['opacity', 'width', 'height', 'top', 'right', 'bottom', 'left']
+        cssValues: ['opacity', 'width', 'height', 'top', 'right', 'bottom', 'left']
     });
 
     // console.log(bip);
