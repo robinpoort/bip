@@ -486,7 +486,7 @@
     let x = xval ? xval : values.translateX;
     let y = yval ? yval : values.translateY;
     // Set Matrix values
-    element.style.transform = 'translateX(' + x + 'px) translateY('+ y + 'px) scaleX(' + values.scaleX + ') scaleY(' + values.scaleY + ') rotate(' + values.scaleX + 'deg)';
+    element.style.transform = 'translateX(' + x + 'px) translateY('+ y + 'px) scaleX(' + values.scaleX + ') scaleY(' + values.scaleY + ') rotate(' + values.rotate + 'deg)';
 
     // Set CSS properties and values
     settings.cssValues.forEach(function(prop) {
