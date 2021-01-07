@@ -26,6 +26,7 @@
     selector: '[data-touch]',
     controls: '[data-touch-controls]',
     closes: '[data-touch-closes]',
+    calculator: 'translate',
 
     threshold: 0.2,
     openClass: 'is-open',
@@ -299,7 +300,7 @@
   function getTransitionValues(element, calculator, settings) {
 
     // Get initial values
-    const calculateFrom = getMatrixValues(calculator, "translate");
+    const calculateFrom = getMatrixValues(calculator, settings.calculator);
     let fromValues = {};
     settings.matrixValues.forEach(function(prop) { fromValues[prop] = (getMatrixValues(element, prop)) });
     settings.cssValues.forEach(function(prop) { fromValues[prop] = (getCSSValue(element, prop)) });
@@ -385,7 +386,7 @@
   // Get buddies
   // ===========
 
-  function getBuddies(target, element) {
+  function getBuddies(target) {
 
     // Get target buddies list
     let buddylist = target.getAttribute('data-touch-buddies') || false;
@@ -419,7 +420,6 @@
 
   function getValues(target, settings) {
     const transitionValues = getTransitionValues(target, target, settings);
-    console.log('vals', transitionValues);
     return {
       "transitionValues": transitionValues,
       "translate": getMatrixValues(target, "translate").value || 0,
@@ -486,6 +486,7 @@
     let x = xval ? xval : values.translateX;
     let y = yval ? yval : values.translateY;
     // Set Matrix values
+    // @TODO: Scale is not giving expected results
     element.style.transform = 'translateX(' + x + 'px) translateY('+ y + 'px) scaleX(' + values.scaleX + ') scaleY(' + values.scaleY + ') rotate(' + values.rotate + 'deg)';
 
     // Set CSS properties and values
@@ -507,14 +508,12 @@
     settings.matrixValues.forEach(function(prop) {
       let multiplier = calculateMultiplier(element, buddyValues[prop], transitionValues);
       if (multiplier) {
-        // console.log(buddyValues[prop]);
         let x = (parseFloat(buddyValues[prop].from.x) < parseFloat(buddyValues[prop].to.x)) ? parseFloat(buddyValues[prop].from.x) + (buddyValues[prop].difference * multiplier) : parseFloat(buddyValues[prop].from.x) - (buddyValues[prop].difference * multiplier);
         let y = (parseFloat(buddyValues[prop].from.y) < parseFloat(buddyValues[prop].to.y)) ? parseFloat(buddyValues[prop].from.y) + (buddyValues[prop].ydifference * multiplier) : parseFloat(buddyValues[prop].from.y) - (buddyValues[prop].ydifference * multiplier) || false;
         transforms.push(prop +'(' + x + buddyValues[prop].unit + (y ? ',' + y + buddyValues[prop].unit + ')' : ')'));
       }
     });
     transforms = transforms.join(' ');
-    console.log(transforms);
     element.style.transform = transforms;
     settings.cssValues.forEach(function(prop) {
       let buddyValue = buddyValues[prop];
@@ -749,7 +748,7 @@
       let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.translate.x) : false;
       let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.translate.y) : false;
       let difference = (targetValues.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
-      const isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.min, targetValues.max, true) : translatedY.between(targetValues.min, targetValues.max, true);
+      const isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.min, targetValues.max, true) : translatedY.between(targetValues.min, targetValues.max, true); // @TODO: dop this with simple math.min and math.max?
 
       if (buddies && touchmoved === 0) {
         buddies.forEach(function (buddy) {
