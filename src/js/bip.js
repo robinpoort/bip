@@ -47,7 +47,6 @@
   let moveDirection = 'forward';
   let gestureZones = false;
   let target = false;
-  let final = false;
   let targetValues = [];
   let buddies = [];
   let buddiesValues = [];
@@ -179,7 +178,7 @@
         }
       } else if (type === 'rotate') {
         value.value = {
-          x: 1,
+          x: 0,
           unit: 'deg'
         }
       }
@@ -261,7 +260,7 @@
 
   function calculateDifference(from, to, difference) {
     let values = {};
-    values.points = (getDifference(from, to) / difference) || 0;
+    // values.points = (getDifference(from, to) / difference) || 0;
     values.difference = (getDifference(from, to)) || 0;
     return values;
   }
@@ -307,7 +306,7 @@
       "to": to.value,
       "unit": to.unit || '',
       "dir": (from.value < to.value) ? 'up' : 'down',
-      "points": calculateDifference(from.value, to.value, difference).points,
+      // "points": calculateDifference(from.value, to.value, difference).points,
       "difference": calculateDifference(from.value, to.value, difference).difference,
       "delay": from.delay,
       "duration": from.duration,
@@ -315,10 +314,10 @@
     if (dimension === 2) {
       values.unit = to.value.unit;
       values.dir = (from.value.x < to.value.x) ? 'up' : 'down';
-      values.points = calculateDifference(from.value.x, to.value.x, difference).points;
+      // values.points = calculateDifference(from.value.x, to.value.x, difference).points;
       values.difference = calculateDifference(from.value.x, to.value.x, difference).difference;
       values.ydir = (from.value.y < to.value.y) ? 'up' : 'down';
-      values.ypoints = calculateDifference(from.value.y, to.value.y, difference).points;
+      // values.ypoints = calculateDifference(from.value.y, to.value.y, difference).points;
       values.ydifference = calculateDifference(from.value.y, to.value.y, difference).difference;
     }
     return values;
@@ -462,55 +461,29 @@
 
   function getValues(target, settings) {
     const transitionValues = getTransitionValues(target, target, settings);
+    const from = parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y);
+    const to = parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y);
     return {
       "transitionValues": transitionValues,
       "translate": getMatrixValues(target, "translate").value || 0,
       "axis": transitionValues.axis,
-      "from": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y),
-      "to": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y),
-    };
-  }
-
-
-  // Calculate live values
-  // =====================
-
-  function calculateValues(movedX, movedY, transitionValues, settings) {
-    const dir = (targetValues.axis === 'x') ? movedX : movedY;
-    // Calculate matrix properties and values
-    // @TODO: See if we can improve 2 dimensional elements
-    let returnValues = {
-      "movedX": movedX,
-      "movedY": movedY,
+      "from": from,
+      "to": to,
+      "difference": getDifference(from, to),
       "delay": transitionValues.translate.delay,
       "duration": transitionValues.translate.duration,
-      "difference": transitionValues.difference,
-      "translateX": ((transitionValues.translate.dir === 'down') ? parseFloat(transitionValues.translate.from.x) - (dir * transitionValues.translate.points) : parseFloat(transitionValues.translate.from.x) + (dir * transitionValues.translate.points)),
-      "translateY": ((transitionValues.translate.ydir === 'down') ? parseFloat(transitionValues.translate.from.y) - (dir * transitionValues.translate.ypoints) : parseFloat(transitionValues.translate.from.y) + (dir * transitionValues.translate.ypoints)),
-      "scaleX": ((transitionValues.scale.dir === 'down') ? parseFloat(transitionValues.scale.from.x) - (dir * transitionValues.scale.points) : parseFloat(transitionValues.scale.from.x) + (dir * transitionValues.scale.points)),
-      "scaleY": ((transitionValues.scale.ydir === 'down') ? parseFloat(transitionValues.scale.from.y) - (dir * transitionValues.scale.ypoints) : parseFloat(transitionValues.scale.from.y) + (dir * transitionValues.scale.ypoints)),
-      "skewX": ((transitionValues.skew.dir === 'down') ? parseFloat(transitionValues.skew.from.x) - (dir * transitionValues.skew.points) : parseFloat(transitionValues.skew.from.x) + (dir * transitionValues.skew.points)),
-      "skewY": ((transitionValues.skew.ydir === 'down') ? parseFloat(transitionValues.skew.from.y) - (dir * transitionValues.skew.ypoints) : parseFloat(transitionValues.skew.from.y) + (dir * transitionValues.skew.ypoints)),
-      "rotate": ((transitionValues.rotate.dir === 'down') ? parseFloat(transitionValues.rotate.from.x) - (dir * transitionValues.rotate.points) : parseFloat(transitionValues.rotate.from.x) + (dir * transitionValues.rotate.points)),
     };
-    // Calculate CSS properties and values
-    settings.cssValues.forEach(function(prop) {
-      if (transitionValues[prop] !== undefined && transitionValues[prop].points !== 0) {
-        returnValues[prop] = ((transitionValues[prop].dir === 'down') ? transitionValues[prop].from - (dir * transitionValues[prop].points) : transitionValues[prop].from + (dir * transitionValues[prop].points));
-      }
-    });
-    return returnValues;
   }
 
 
   // Calculate multiplier
   // ====================
 
-  function calculateMultiplier(element, value, transitionValues) {
-    let targetDuration = transitionValues.duration;
-    let factor = (targetValues.axis === 'x' ? (transitionValues.movedX / (transitionValues.difference / 100)) : (transitionValues.movedY / (transitionValues.difference / 100))) / 100;
-    let delay = parseInt(value.delay === 0 ? transitionValues.delay : value.delay);
-    let duration = parseInt(value.duration === 0 ? transitionValues.duration : value.duration);
+  function calculateMultiplier(value) {
+    let targetDuration = targetValues.duration;
+    let factor = (targetValues.axis === 'x' ? (targetValues.movedX / (targetValues.difference / 100)) : (targetValues.movedY / (targetValues.difference / 100))) / 100;
+    let delay = parseInt(value.delay === 0 ? targetValues.delay : value.delay);
+    let duration = parseInt(value.duration === 0 ? targetValues.duration : value.duration);
     let delayFactor = delay/targetDuration;
     let durationFactor = duration/targetDuration;
     let X = (factor-delayFactor)*((targetDuration/(duration*durationFactor))*durationFactor);
@@ -519,39 +492,20 @@
   }
 
 
-  // Set styling
-  // ===========
-  // @TODO: can we merge this with setbuddystyling?
-
-  function setStyling(element, values, settings, xval, yval) {
-    let x = xval ? xval : values.translateX;
-    let y = yval ? yval : values.translateY;
-    // Set Matrix values
-    // @TODO: Scale is not giving expected results
-    element.style.transform = 'translateX(' + x + 'px) translateY('+ y + 'px) scaleX(' + values.scaleX + ') scaleY(' + values.scaleY + ') rotate(' + values.rotate + 'deg)';
-
-    // Set CSS properties and values
-    settings.cssValues.forEach(function(prop) {
-      if (values[prop] !== undefined) {
-        element.style[prop] = prop !== 'opacity' ? values[prop] + 'px' : values[prop];
-      }
-    });
-    return calculateMultiplier(element, targetValues, values);
-  }
-
-
   // Set buddy styling
   // =================
-  // @TODO: can we merge this with setstyling?
 
-  function setBuddyStyling(element, buddyValues, transitionValues, settings) {
+  function setBuddyStyling(element, buddyValues, settings) {
     let transforms = [];
     settings.matrixValues.forEach(function(prop) {
-      let multiplier = calculateMultiplier(element, buddyValues[prop], transitionValues);
+      let multiplier = calculateMultiplier(buddyValues[prop]);
       if (multiplier) {
         let x = (parseFloat(buddyValues[prop].from.x) < parseFloat(buddyValues[prop].to.x)) ? parseFloat(buddyValues[prop].from.x) + (buddyValues[prop].difference * multiplier) : parseFloat(buddyValues[prop].from.x) - (buddyValues[prop].difference * multiplier);
         let y = (parseFloat(buddyValues[prop].from.y) < parseFloat(buddyValues[prop].to.y)) ? parseFloat(buddyValues[prop].from.y) + (buddyValues[prop].ydifference * multiplier) : parseFloat(buddyValues[prop].from.y) - (buddyValues[prop].ydifference * multiplier) || false;
         transforms.push(prop +'(' + x + buddyValues[prop].unit + (y ? ',' + y + buddyValues[prop].unit + ')' : ')'));
+        if (element === target && prop === settings.calculator) {
+          targetValues.finalMove = {"x": x, "y": y};
+        }
       }
     });
     transforms = transforms.join(' ');
@@ -560,7 +514,7 @@
       if (prop !== undefined) {
         let buddyValue = buddyValues[prop];
         if (buddyValue !== undefined) {
-          let multiplier = calculateMultiplier(element, buddyValue, transitionValues);
+          let multiplier = calculateMultiplier(buddyValue);
           if (buddyValue.from < buddyValue.to) {
             element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
           } else {
@@ -576,31 +530,24 @@
   // ===============================
 
   function transitionWithGesture(element, translatedX, translatedY, touchmoveX, touchmoveY, isBetween, settings) {
-    let x = translatedX || 0;
-    let y = translatedY || 0;
     let movedX = Math.abs(touchmoveX - touchstartX);
     let movedY = Math.abs(touchmoveY - touchstartY);
-    let transitionValues = calculateValues(movedX, movedY, targetValues.transitionValues, settings);
 
+    // Add movedX and movedY to targetValues
+    targetValues.movedX = movedX;
+    targetValues.movedY = movedY;
+    
     // Only style if we're inbetween
     if (isBetween) {
-      // The target itself
-      // let targetStyling = setStyling(element, transitionValues, settings, x, y);
-
-      // It's buddies
       if (buddies) {
         buddies.forEach(function (buddy, i) {
           let count = (buddy.className.match(/openedby:/g) || []).length;
           if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute('data-touch-id')))) {
-            let styling = setBuddyStyling(buddy, buddiesValues[i], transitionValues, settings);
-            buddiesValues[i].elapsedTime = styling;
+            setBuddyStyling(buddy, buddiesValues[i], settings);
           }
         });
       }
     }
-
-    // @TODO: Make this an object containing separate target and buddies X settings? (so we can calculate remaining time)
-    final = calculateValues(touchmoveX - touchstartX, touchmoveY - touchstartY, targetValues.transitionValues, settings, settings)
   }
 
 
@@ -613,7 +560,6 @@
     lastDifference = false;
     moveDirection = 'forward';
     target = false;
-    final = false;
     programmaticallyClosed = false;
     targetValues = [];
     buddies = [];
@@ -683,14 +629,12 @@
 
   function handleGesture(event, target, moveDirection, settings) {
     const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
-    const moveFrom = (targetValues.axis === 'x') ? targetValues.transitionValues.translate.from.x : targetValues.transitionValues.translate.from.y;
-    const movedTo = (targetValues.axis === 'x') ? final.translateX : final.translateY;
-    const threshold = targetValues.transitionValues.difference * settings.threshold;
+    const threshold = targetValues.difference * settings.threshold;
 
     // Add the transitioning class
     target.classList.add(settings.transitioningClass);
 
-    if (diff > threshold && movedTo > moveFrom && moveDirection === 'forward') {
+    if (diff > threshold && moveDirection === 'forward') {
       toggle(target, settings);
     } else {
       resetStyle(target);
@@ -790,8 +734,8 @@
       // Variables
       let touchmoveX = event.changedTouches[0].screenX;
       let touchmoveY = event.changedTouches[0].screenY;
-      let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.translate.x) : false;
-      let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.translate.y) : false;
+      let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.from) : false;
+      let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.from) : false;
       let difference = (targetValues.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
       const isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.from, targetValues.to, true) : translatedY.between(targetValues.from, targetValues.to, true);
 
@@ -801,6 +745,8 @@
         });
         touchmoved = 1;
       }
+
+      console.log(buddiesValues);
 
       // Set last difference
       if ((getDifference(difference, lastDifference) > 10) || lastDifference === false) {
