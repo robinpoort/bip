@@ -267,10 +267,41 @@
   }
 
 
+  // Is equivalent
+  // =============
+
+  function isEquivalent(a, b) {
+    // Create arrays of property names
+    var aProps = Object.getOwnPropertyNames(a);
+    var bProps = Object.getOwnPropertyNames(b);
+
+    // If number of properties is different,
+    // objects are not equivalent
+    if (aProps.length !== bProps.length) {
+      return false;
+    }
+
+    for (var i = 0; i < aProps.length; i++) {
+      var propName = aProps[i];
+
+      // If values of same property are not equal,
+      // objects are not equivalent
+      if (a[propName] !== b[propName]) {
+        return false;
+      }
+    }
+
+    // If we made it this far, objects
+    // are considered equivalent
+    return true;
+  }
+
+
   // Get calculations
   // ================
 
   function getCalculations(from, to, difference, dimension) {
+    // Set values
     let values = {
       "from": from.value,
       "to": to.value,
@@ -333,8 +364,16 @@
     };
 
     // Add properties and values to the object
-    settings.matrixValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 2) });
-    settings.cssValues.forEach(function(el) { returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 1) });
+    settings.matrixValues.forEach(function(el) {
+      if (!isEquivalent(fromValues[el], toValues[el])) {
+        returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 2)
+      }
+    });
+    settings.cssValues.forEach(function(el) {
+      if (!isEquivalent(fromValues[el], toValues[el])) {
+        returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 1)
+      }
+    });
 
     return returnValues;
 
@@ -394,6 +433,9 @@
     // Get controllers list
     const hasControllers = document.querySelectorAll('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
 
+    // @TODO: fix this properly, we want the main target tpo be just another "buddy" (rename buddies)
+    buddies.push(target);
+
     if (hasControllers) {
       hasControllers.forEach(function (controller) {
         buddies.push(controller);
@@ -424,8 +466,8 @@
       "transitionValues": transitionValues,
       "translate": getMatrixValues(target, "translate").value || 0,
       "axis": transitionValues.axis,
-      "min": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y),
-      "max": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y),
+      "from": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y),
+      "to": parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y),
     };
   }
 
@@ -453,7 +495,7 @@
     };
     // Calculate CSS properties and values
     settings.cssValues.forEach(function(prop) {
-      if (transitionValues[prop].points !== 0) {
+      if (transitionValues[prop] !== undefined && transitionValues[prop].points !== 0) {
         returnValues[prop] = ((transitionValues[prop].dir === 'down') ? transitionValues[prop].from - (dir * transitionValues[prop].points) : transitionValues[prop].from + (dir * transitionValues[prop].points));
       }
     });
@@ -465,7 +507,7 @@
   // ====================
 
   function calculateMultiplier(element, value, transitionValues) {
-    if (value.points === 0 || (value.points === 0 && value.ypoints === 0)) return false;
+    // if (value.points === 0 || (value.points === 0 && value.ypoints === 0)) return false;
     let targetDuration = transitionValues.duration;
     let factor = (targetValues.axis === 'x' ? (transitionValues.movedX / (transitionValues.difference / 100)) : (transitionValues.movedY / (transitionValues.difference / 100))) / 100;
     let delay = parseInt(value.delay === 0 ? transitionValues.delay : value.delay);
@@ -516,13 +558,15 @@
     transforms = transforms.join(' ');
     element.style.transform = transforms;
     settings.cssValues.forEach(function(prop) {
-      let buddyValue = buddyValues[prop];
-      if (buddyValue !== undefined) {
-        let multiplier = calculateMultiplier(element, buddyValue, transitionValues);
-        if (buddyValue.from < buddyValue.to) {
-          element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
-        } else {
-          element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
+      if (prop !== undefined) {
+        let buddyValue = buddyValues[prop];
+        if (buddyValue !== undefined) {
+          let multiplier = calculateMultiplier(element, buddyValue, transitionValues);
+          if (buddyValue.from < buddyValue.to) {
+            element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
+          } else {
+            element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
+          }
         }
       }
     });
@@ -542,7 +586,7 @@
     // Only style if we're inbetween
     if (isBetween) {
       // The target itself
-      let targetStyling = setStyling(element, transitionValues, settings, x, y);
+      // let targetStyling = setStyling(element, transitionValues, settings, x, y);
 
       // It's buddies
       if (buddies) {
@@ -695,37 +739,39 @@
 
     function touchstartHandler(event) {
 
-      // Return false for wrong elements
+      // Return false if target is not a gesture zone
       if (!event.target.closest(gestureZones)) return false;
+
+      // Return false if target or closest is an ignore target
       ignore = !!event.target.closest('[data-touch-ignore]');
       if (ignore) return false;
 
-      // Reset for new touchstart event
+      // Reset values for new touchstart event
       resetValues();
 
       // Movement variables
       touchstartX = event.changedTouches[0].screenX;
       touchstartY = event.changedTouches[0].screenY;
+
+      // Event target
       const eventTarget = event.target.closest(gestureZones);
 
       // Set target
       // ==========
       target = getTarget(eventTarget, settings);
-
       if (!target) return false;
 
       // Return false if target is already transitioning
       if (target.classList.contains(settings.transitioningClass)) return false;
 
-      if (target) {
-        targetValues = getValues(target, settings);
+      // Get target values
+      targetValues = getValues(target, settings);
 
-        // Emit event
-        emitEvent('bipDrag', settings);
+      // Emit event
+      emitEvent('bipDrag', settings);
 
-        // Disable styling
-        document.body.style.overflow = 'hidden';
-      }
+      // Disable styling
+      document.body.style.overflow = 'hidden';
     }
 
 
@@ -748,7 +794,7 @@
       let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.translate.x) : false;
       let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.translate.y) : false;
       let difference = (targetValues.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
-      const isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.min, targetValues.max, true) : translatedY.between(targetValues.min, targetValues.max, true); // @TODO: dop this with simple math.min and math.max?
+      const isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.from, targetValues.to, true) : translatedY.between(targetValues.from, targetValues.to, true);
 
       if (buddies && touchmoved === 0) {
         buddies.forEach(function (buddy) {
@@ -801,11 +847,11 @@
 
     function clickHandler(event) {
 
-      // Prevent when element is manually closed
+      // Prevent default when element is programmatically closed
       if (programmaticallyClosed) {
         event.preventDefault();
 
-        // Re-set manually closed for next event
+        // Re-set programmatically closed for next event
         programmaticallyClosed = false;
       }
 
@@ -815,6 +861,7 @@
       // Reset for new click event
       resetValues();
 
+      // Prevent default
       event.preventDefault();
 
       // Variables
@@ -822,16 +869,21 @@
       const closeTarget = event.target.closest(settings.closes);
       let targets = [];
 
+      // When event target is a "close button"
       if (closeTarget) {
         let toClose = closeTarget.getAttribute(['data-touch-closes']);
         toClose = toClose.split(',');
+
+        // Close each target
         toClose.forEach(function (el) {
           el = document.querySelector('[data-touch-id="' + el + '"]');
           if (el.classList.contains(settings.openClass)) {
             targets.push(getTarget(el, settings));
           }
         });
-      } else {
+      }
+      // When target is a "control"
+      else {
         targets.push(getTarget(controlTarget, settings));
       }
 
@@ -849,7 +901,6 @@
     /**
      * Toggle
      */
-    // @TODO: add open and close functions?
 
     publicAPIs.toggle = function (target) {
       toggle(target, settings);
