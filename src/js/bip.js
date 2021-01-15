@@ -507,7 +507,6 @@
   // ====================
 
   function calculateMultiplier(element, value, transitionValues) {
-    // if (value.points === 0 || (value.points === 0 && value.ypoints === 0)) return false;
     let targetDuration = transitionValues.duration;
     let factor = (targetValues.axis === 'x' ? (transitionValues.movedX / (transitionValues.difference / 100)) : (transitionValues.movedY / (transitionValues.difference / 100))) / 100;
     let delay = parseInt(value.delay === 0 ? transitionValues.delay : value.delay);
