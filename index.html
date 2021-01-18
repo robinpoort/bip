@@ -10,7 +10,6 @@
 <style>
     html {
         height: 100%;
-        overflow: hidden;
     }
 
     body {
@@ -26,6 +25,7 @@
     }
 
     .wrapper {
+        background: #fff;
         width: 100%;
         height: 100%;
         overflow: hidden;
@@ -35,24 +35,27 @@
     /* Demo styling */
     .overlay {
         position: absolute;
+        z-index: 2;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, .5);
         opacity: 0;
-        transition: opacity 800ms linear 200ms, transform 800ms linear 200ms, width 1200ms linear;
-        transform: scale(.6);
+        /*transition: opacity 800ms linear 200ms, transform 800ms linear 200ms, width 1200ms linear;*/
+        transition: opacity 200ms;
+        /*transform: scale(.6);*/
         pointer-events: none;
         touch-action: none;
+        backdrop-filter: blur(5px);
     }
 
     .overlay.is-open {
         opacity: 1;
-        transform: scale(1.2) translateX(50%);
+        /*transform: scale(1.2) translateX(50%);*/
         pointer-events: auto;
         touch-action: manipulation;
-        width: 50%;
+        /*width: 50%;*/
     }
 
     .top,
@@ -63,17 +66,27 @@
         z-index: 1;
         background: #fff;
         padding: 1rem;
+        box-shadow: none;
     }
 
     .top,
     .bottom {
         width: 100%;
-        transition: transform 1200ms linear;
+        transition: transform 300ms;
     }
 
-    .top.is-open,
-    .bottom.is-open {
+    .top.is-open {
         transform: translateY(0);
+        z-index: 3;
+    }
+
+    .bottom.is-open {
+        transform: translateY(1rem) scale(.9);
+        z-index: 3;
+    }
+
+    .bottom button.is-open {
+        transform: translateX(40vw);
     }
 
     .top button,
@@ -94,28 +107,40 @@
 
     .bottom {
         bottom: 0;
-        transform: translateY(100%);
+        transform: translateY(calc(100% - 4rem));
+        box-shadow: 0 0 10px 0 rgba(0,0,0,.2);
     }
 
     .bottom button {
-        bottom: 100%;
+        top: 0;
+        transform: translateX(0);
+        transition: transform 150ms;
+    }
+
+    .bottom h1 {
+        margin-top: 0;
     }
 
     .right,
     .left {
         height: 100%;
-        transition: transform 1200ms ease-out;
+        transition: transform 300ms ease-out;
     }
 
     .right.is-open,
     .left.is-open {
         transform: translateX(0);
+        z-index: 3;
+    }
+
+    .is-touchmove {
+        z-index: 3;
     }
 
     .right button,
     .left button {
         position: absolute;
-        top: calc(50% - 2rem);
+        top: 0;
         height: 4rem;
     }
 
@@ -145,38 +170,48 @@
         line-height: 44px;
         text-align: center;
     }
+
+    .content {
+        padding: 2rem;
+        will-change: auto;
+    }
 </style>
 <body>
 
 <div class="wrapper">
     <div class="overlay" data-touch-id="overlay" data-touch-closes="top,right,bottom,left"></div>
     <div class="top" data-touch data-touch-id="top" data-touch-buddies="overlay">
-        <button type="button" data-touch-controls="top">Toggle</button>
+        <button type="button" data-touch-controls="top">Down</button>
         <h1>Top</h1>
         <p>Top details</p>
         <p>Top details</p>
         <p>Top details</p>
     </div>
     <div class="right" data-touch data-touch-id="right" data-touch-buddies="overlay">
-        <button type="button" data-touch-controls="right">Toggle</button>
+        <button type="button" data-touch-controls="right">Left</button>
         <h1>Right</h1>
         <p>Right details</p>
         <p>Right details</p>
         <p>Right details</p>
     </div>
-    <div class="bottom" data-touch data-touch-id="bottom" data-touch-buddies="overlay">
-        <button type="button" data-touch-controls="bottom">Toggle</button>
+    <div class="bottom" data-touch data-touch-id="bottom" data-touch-buddies="overlay,bottombutton">
+        <button type="button" data-touch-controls="bottom" data-touch-id="bottombutton">Up</button>
         <h1>Bottom</h1>
         <p>Bottom details</p>
         <p>Bottom details</p>
         <p>Bottom details</p>
     </div>
     <div class="left" data-touch data-touch-id="left" data-touch-buddies="overlay">
-        <button type="button" data-touch-controls="left">Toggle</button>
+        <button type="button" data-touch-controls="left">Right</button>
         <h1>Left</h1>
         <p>Left details</p>
         <p>Left details</p>
         <p>Left details</p>
+    </div>
+    <div class="content">
+        <h1>Center content</h1>
+        <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Donec sed odio dui. Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Sed posuere consectetur est at lobortis.</p>
+        <p>Cras mattis consectetur purus sit amet fermentum. Donec sed odio dui. Donec ullamcorper nulla non metus auctor fringilla. Curabitur blandit tempus porttitor. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
     </div>
 </div>
 

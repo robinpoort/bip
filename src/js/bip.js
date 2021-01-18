@@ -31,6 +31,7 @@
     threshold: 0.2,
     openClass: 'is-open',
     transitioningClass: 'is-transitioning',
+    touchmoveClass: 'is-touchmove',
 
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
@@ -624,6 +625,7 @@
     target.ontransitionend = function() {
       target.classList.remove(settings.transitioningClass);
       target.removeAttribute('style');
+      target.classList.remove(settings.touchmoveClass);
     }
   }
 
@@ -694,6 +696,7 @@
 
       // Disable styling
       document.body.style.overflow = 'hidden';
+      target.classList.add(settings.touchmoveClass);
 
       // Set touchstart to true
       touchstart = true;
@@ -815,6 +818,7 @@
         toggle(target, settings);
         target.ontransitionend = function() {
           target.classList.remove(settings.transitioningClass);
+          target.classList.remove(settings.touchmoveClass);
         }
       });
     }
