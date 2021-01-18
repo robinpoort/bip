@@ -391,9 +391,6 @@
       programmaticallyClosed = true;
     }
 
-    // Get target values
-    targetValues = getValues(target, settings);
-
     return target;
   }
 
@@ -683,6 +680,9 @@
 
       // Return false if target is already transitioning
       if (target.classList.contains(settings.transitioningClass)) return false;
+
+      // Get target values
+      targetValues = getValues(target, settings);
 
       // Get buddies (and values)
       buddies.forEach(function (buddy) {
