@@ -837,6 +837,9 @@
           target.classList.remove(settings.touchmoveClass);
         }
       });
+
+      // Remove overflow hidden from body
+      document.body.removeAttribute('style');
     }
 
 
