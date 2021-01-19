@@ -624,6 +624,7 @@
       target.classList.remove(settings.transitioningClass);
       target.removeAttribute('style');
       target.classList.remove(settings.touchmoveClass);
+      touchstart = false;
     }
 
     // Remove classes when target final duration is done
@@ -632,6 +633,7 @@
       target.classList.remove(settings.transitioningClass);
       target.removeAttribute('style');
       target.classList.remove(settings.touchmoveClass);
+      touchstart = false;
     }, targetValues.duration)
 
     // Emit dragged event
