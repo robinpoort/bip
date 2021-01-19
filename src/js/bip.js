@@ -86,7 +86,8 @@
     if (typeof window.CustomEvent !== 'function') return;
     var event = new CustomEvent(type, {
       bubbles: true,
-      detail: details
+      detail: details,
+      settings: settings
     });
     document.dispatchEvent(event);
   }
@@ -615,9 +616,6 @@
       resetStyle(target);
     }
 
-    // Emit dragged event
-    emitEvent('bipDragged', settings);
-
     // Reset body styling
     document.body.removeAttribute('style');
 
@@ -635,6 +633,9 @@
       target.removeAttribute('style');
       target.classList.remove(settings.touchmoveClass);
     }, targetValues.duration)
+
+    // Emit dragged event
+    emitEvent('bipDragged', settings);
   }
 
 
@@ -699,15 +700,15 @@
         buddiesValues.push(getTransitionValues(buddy, target, settings));
       });
 
-      // Emit event
-      emitEvent('bipDrag', settings);
-
       // Disable styling
       document.body.style.overflow = 'hidden';
       target.classList.add(settings.touchmoveClass);
 
       // Set touchstart to true
       touchstart = true;
+
+      // Emit event
+      emitEvent('bipDrag', settings);
 
       // console.log(target, targetValues, buddies, buddiesValues);
     }
