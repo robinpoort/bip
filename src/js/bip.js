@@ -627,6 +627,14 @@
       target.removeAttribute('style');
       target.classList.remove(settings.touchmoveClass);
     }
+
+    // Remove classes when target final duration is done
+    // @TODO: merge above and below and take into consideration the remaining duration of longest element
+    setTimeout(function() {
+      target.classList.remove(settings.transitioningClass);
+      target.removeAttribute('style');
+      target.classList.remove(settings.touchmoveClass);
+    }, targetValues.duration)
   }
 
 
@@ -763,7 +771,12 @@
       touchendY = event.changedTouches[0].screenY;
 
       // Handle the gesture
-      handleGesture(event, target, moveDirection, settings);
+      if (touchstartX === touchendX && touchstartY === touchendY) {
+        touchstart = false;
+        clickHandler(event);
+      } else {
+        handleGesture(event, target, moveDirection, settings);
+      }
     }
 
 
@@ -771,6 +784,9 @@
     // ==============
 
     function clickHandler(event) {
+
+      // Return false
+      if (touchstart) return false;
 
       // Prevent default when element is programmatically closed
       if (programmaticallyClosed) {
