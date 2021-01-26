@@ -43,9 +43,8 @@
         height: 100%;
         background: rgba(0, 0, 0, .5);
         opacity: 0;
-        /*transition: opacity 800ms linear 200ms, transform 800ms linear 200ms, width 1200ms linear;*/
-        transition: opacity 200ms;
-        /*transform: scale(.6);*/
+        transition: opacity 200ms linear, transform 200ms linear, width 200ms linear;
+        transform: scale(.6);
         pointer-events: none;
         touch-action: none;
         backdrop-filter: blur(5px);
@@ -54,7 +53,7 @@
 
     .overlay.is-open {
         opacity: 1;
-        /*transform: scale(1.2) translateX(50%);*/
+        transform: scale(1.2) translateX(50%);
         cursor: pointer;
         pointer-events: initial;
         touch-action: initial;
@@ -75,7 +74,7 @@
     .top,
     .bottom {
         width: 100%;
-        transition: transform 1000ms;
+        transition: transform 500ms;
     }
 
     .top.is-open {
@@ -90,7 +89,7 @@
     }
 
     .bottom button.is-open {
-        transform: translateX(-40vw);
+        transform: translateX(-40vw) scale(1.2);
     }
 
     .top button,
@@ -184,7 +183,7 @@
     }
 
     .content.is-open {
-        transform: scale(0);
+        transform: scale(.5);
     }
 
 </style>

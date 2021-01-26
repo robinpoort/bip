@@ -154,18 +154,14 @@
     // Return false if no matrix is set
     if (matrix === 'none') return false;
 
-    // Set delay and duration
-    let value = {
-      delay: getTransitionValue('transitionDelay', style, 'transform'),
-      duration: getTransitionValue('transitionDuration', style, 'transform')
-    };
+    let value = {};
 
     // Thanks https://stackoverflow.com/questions/5107134/find-the-rotation-and-skew-of-a-matrix-transformation
     var calculateMatrixValues = function(a) {
       var angle = Math.atan2(a[1], a[0]),
           denom = Math.pow(a[0], 2) + Math.pow(a[1], 2),
           scaleX = Math.sqrt(denom),
-          scaleY = (a[0] * a[3] - a[2] * a[1]) / scaleX,
+          scaleY = (a[0] * a[3] - a[2] * a[1]) / scaleX || 1,
           skewX = Math.atan2(a[0] * a[2] + a[1] * a[3], denom);
       return {
         angle: angle / (Math.PI / 180),
@@ -205,6 +201,12 @@
         unit: 'deg'
       }
     }
+
+    // Set delay and duration
+    element.removeAttribute('style');
+    value.delay = getTransitionValue('transitionDelay', style, 'transform');
+    value.duration = getTransitionValue('transitionDuration', style, 'transform');
+    element.style.transition = 'none';
 
     return value;
   }
@@ -311,6 +313,7 @@
       values.ydir = (from.value.y < to.value.y) ? 'up' : 'down';
       values.ydifference = calculateDifference(from.value.y, to.value.y, difference).difference;
     }
+    if (values.difference === 0 && values.ydifference === 0) return false;
     return values;
   }
 
@@ -362,12 +365,18 @@
     // Add properties and values to the object
     settings.matrixValues.forEach(function(el) {
       if (fromValues[el] && toValues[el] && !isEquivalent(fromValues[el], toValues[el])) {
-        returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 2)
+        const elCalculations = getCalculations(fromValues[el], toValues[el], difference, 2);
+        if (elCalculations) {
+          returnValues[el] = elCalculations
+        }
       }
     });
     settings.cssValues.forEach(function(el) {
       if (!isEquivalent(fromValues[el], toValues[el])) {
-        returnValues[el] = getCalculations(fromValues[el], toValues[el], difference, 1)
+        const elCalculations = getCalculations(fromValues[el], toValues[el], difference, 1)
+        if (elCalculations) {
+          returnValues[el] = elCalculations
+        }
       }
     });
 
@@ -407,6 +416,8 @@
     } else {
       document.querySelectorAll('[data-touch]').forEach(function(el) {
         if (el.classList.contains(settings.openClass)) {
+          // Reset buddies and toggle elements
+          buddies = [];
           toggle(el, settings);
         }
       });
@@ -450,6 +461,8 @@
     const transitionValues = getTransitionValues(target, target, settings);
     const from = parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y);
     const to = parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y);
+
+
     return {
       "axis": transitionValues.axis,
       "from": from,
@@ -564,8 +577,6 @@
     if (buddies.length === 0) {
       buddies = getBuddies(target, target);
     }
-
-    // console.log(buddiesValues);
 
     // @TODO: rebuild now our target is also a buddy?
 
@@ -725,7 +736,6 @@
       // Emit event
       emitEvent('bipDrag', settings);
 
-      // console.log(target, targetValues, buddies, buddiesValues);
     }
 
 
