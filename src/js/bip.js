@@ -215,12 +215,14 @@
 
   function getCSSValue(element, type) {
     let style = window.getComputedStyle(element);
-    return {
-      value: parseFloat(style[type]),
-      unit: style[type].replace(/\d+|[.]/g, ''),
-      delay: getTransitionValue('transitionDelay', style, type),
-      duration: getTransitionValue('transitionDuration', style, type)
-    };
+    let styles = [];
+    styles.value = parseFloat(style[type]);
+    styles.unit = style[type].replace(/\d+|[.]/g, '');
+    element.removeAttribute('style');
+    styles.delay = getTransitionValue('transitionDelay', style, type);
+    styles.duration = getTransitionValue('transitionDuration', style, type);
+    element.style.transition = 'none';
+    return styles;
   }
 
 
@@ -299,8 +301,8 @@
       "unit": to.unit || '',
       "dir": (from.value < to.value) ? 'up' : 'down',
       "difference": calculateDifference(from.value, to.value, difference).difference,
-      "delay": from.delay,
-      "duration": from.duration,
+      "delay": to.delay !== 0 ? to.delay : from.delay,
+      "duration": to.duration !== 0 ? to.duration : from.duration
     };
     if (dimension === 2) {
       values.unit = to.value.unit;
@@ -423,17 +425,8 @@
     // Get target buddies list
     let buddylist = target.getAttribute('data-touch-buddies') || false;
 
-    // Get controllers list
-    const hasControllers = document.querySelectorAll('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
-
     // @TODO: fix this properly, we want the main target tpo be just another "buddy" (rename buddies)
     buddies.push(target);
-
-    if (hasControllers) {
-      hasControllers.forEach(function (controller) {
-        buddies.push(controller);
-      });
-    }
 
     // When target has buddies
     if (buddylist) {
@@ -571,6 +564,8 @@
     if (buddies.length === 0) {
       buddies = getBuddies(target, target);
     }
+
+    // console.log(buddiesValues);
 
     // @TODO: rebuild now our target is also a buddy?
 

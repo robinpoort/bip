@@ -75,7 +75,7 @@
     .top,
     .bottom {
         width: 100%;
-        transition: transform 300ms;
+        transition: transform 1000ms;
     }
 
     .top.is-open {
@@ -84,6 +84,7 @@
     }
 
     .bottom.is-open {
+        transition-duration: 300ms;
         transform: translateY(1rem) scale(.9);
         z-index: 3;
     }
@@ -232,7 +233,7 @@
 <!-- initialize -->
 <script type="text/javascript">
     const bip = new Bip('[data-touch]', {
-        cssValues: ['opacity', 'width', 'height', 'top', 'right', 'bottom', 'left']
+        // cssValues: ['opacity', 'width', 'height', 'top', 'right', 'bottom', 'left']
     });
 
     // console.log(bip);
