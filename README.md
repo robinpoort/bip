@@ -7,3 +7,4 @@ Acknowledgements:
 - Calculations are based on linear transitions, so swiping and clicking might look slightly different when using longer transition times and/or a complex bezier.
 - cssValues should be single values, shorthand CSS is not supported
 - when using transform; translate is only calculated correctlty when being set before rotate or skew
+- using rotate and skew together could result in funny results

@@ -160,30 +160,48 @@
       duration: getTransitionValue('transitionDuration', style, 'transform')
     };
 
-    const matrixValues = matrix.match(/matrix.*\((.+)\)/)[1].split(', ');
+    // Thanks https://stackoverflow.com/questions/5107134/find-the-rotation-and-skew-of-a-matrix-transformation
+    var calculateMatrixValues = function(a) {
+      var angle = Math.atan2(a[1], a[0]),
+          denom = Math.pow(a[0], 2) + Math.pow(a[1], 2),
+          scaleX = Math.sqrt(denom),
+          scaleY = (a[0] * a[3] - a[2] * a[1]) / scaleX,
+          skewX = Math.atan2(a[0] * a[2] + a[1] * a[3], denom);
+      return {
+        angle: angle / (Math.PI / 180),
+        scaleX: scaleX,
+        scaleY: scaleY,
+        skewX: skewX / (Math.PI / 180),
+        skewY: 0,
+        translateX: a[4],
+        translateY: a[5]
+      };
+    };
+
+    const matrixValues = calculateMatrixValues(matrix.match(/matrix.*\((.+)\)/)[1].split(', '));
 
     // Set proper values
     if (type === 'translate') {
       value.value = {
-        x: matrixValues[4],
-        y: matrixValues[5],
+        x: matrixValues.translateX,
+        y: matrixValues.translateY,
         unit: 'px'
       }
     } else if (type === 'scale') {
       value.value = {
-        x: matrixValues[0],
-        y: matrixValues[3],
+        x: matrixValues.scaleX,
+        y: matrixValues.scaleY,
         unit: ''
       }
     } else if (type === 'rotate') {
       value.value = {
-        x: Math.round(Math.atan2(matrixValues[1], matrixValues[0]) * (180/Math.PI)),
+        x: matrixValues.angle,
         unit: 'deg'
       }
     } else if (type === 'skew') {
       value.value = {
-        x: matrixValues[1],
-        y: matrixValues[2],
+        x: matrixValues.skewX,
+        y: matrixValues.skewY,
         unit: 'deg'
       }
     }
