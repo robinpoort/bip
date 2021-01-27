@@ -16,12 +16,12 @@
   // Feature Test
   // ============
 
-  var supports = 'querySelector' in document && 'addEventListener' in window;
+  let supports = 'querySelector' in document && 'addEventListener' in window;
 
 
   // Default variables
   // =================
-  var defaults = {
+  let defaults = {
 
     selector: '[data-touch]',
     controls: '[data-touch-controls]',
@@ -35,6 +35,8 @@
 
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
+
+    clickDrag: true,
 
     emitEvents: true
   };
@@ -52,7 +54,6 @@
   let buddies = [];
   let buddiesValues = [];
   let ignore = false;
-  let programmaticallyClosed = false;
 
 
   // Closest polyfill
@@ -67,8 +68,8 @@
       Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
     }
     Element.prototype.closest = function (s) {
-      var el = this;
-      var ancestor = this;
+      let el = this;
+      let ancestor = this;
       if (!document.documentElement.contains(el)) return null;
       do {
         if (ancestor.matches(s)) return ancestor;
@@ -84,7 +85,7 @@
 
   function emitEvent(type, settings, details) {
     if (typeof window.CustomEvent !== 'function') return;
-    var event = new CustomEvent(type, {
+    let event = new CustomEvent(type, {
       bubbles: true,
       detail: details,
       settings: settings
@@ -111,7 +112,7 @@
 
     // Merge the object into the extended object
     let merge = function (obj) {
-      for (var prop in obj) {
+      for (let prop in obj) {
         if (obj.hasOwnProperty(prop)) {
           // If property is an object, merge properties
           if (deep && Object.prototype.toString.call(obj[prop]) === '[object Object]') {
@@ -148,17 +149,20 @@
   // =================
 
   function getMatrixValues(element, type) {
+
+    // Get values
     const style = window.getComputedStyle(element);
     const matrix = style['transform'] || style.webkitTransform || style.mozTransform;
 
-    // Return false if no matrix is set
+    // Return false if no matrix is found
     if (matrix === 'none') return false;
 
+    // Prepare object
     let value = {};
 
-    // Thanks https://stackoverflow.com/questions/5107134/find-the-rotation-and-skew-of-a-matrix-transformation
-    var calculateMatrixValues = function(a) {
-      var angle = Math.atan2(a[1], a[0]),
+    // Thanks: https://stackoverflow.com/questions/5107134/find-the-rotation-and-skew-of-a-matrix-transformation
+    let calculateMatrixValues = function(a) {
+      let angle = Math.atan2(a[1], a[0]),
           denom = Math.pow(a[0], 2) + Math.pow(a[1], 2),
           scaleX = Math.sqrt(denom),
           scaleY = (a[0] * a[3] - a[2] * a[1]) / scaleX || 1,
@@ -174,9 +178,10 @@
       };
     };
 
+    // Get separate matrix values
     const matrixValues = calculateMatrixValues(matrix.match(/matrix.*\((.+)\)/)[1].split(', '));
 
-    // Set proper values
+    // Return values
     if (type === 'translate') {
       value.value = {
         x: matrixValues.translateX,
@@ -202,12 +207,13 @@
       }
     }
 
-    // Set delay and duration
+    // Get and set delay and duration
     element.removeAttribute('style');
     value.delay = getTransitionValue('transitionDelay', style, 'transform');
     value.duration = getTransitionValue('transitionDuration', style, 'transform');
     element.style.transition = 'none';
 
+    // Return
     return value;
   }
 
@@ -255,7 +261,7 @@
   // Calculate difference
   // ====================
 
-  function calculateDifference(from, to, difference) {
+  function calculateDifference(from, to) {
     let values = {};
     values.difference = (getDifference(from, to)) || 0;
     return values;
@@ -267,8 +273,8 @@
 
   function isEquivalent(a, b) {
     // Create arrays of property names
-    var aProps = Object.getOwnPropertyNames(a);
-    var bProps = Object.getOwnPropertyNames(b);
+    let aProps = Object.getOwnPropertyNames(a);
+    let bProps = Object.getOwnPropertyNames(b);
 
     // If number of properties is different,
     // objects are not equivalent
@@ -276,8 +282,8 @@
       return false;
     }
 
-    for (var i = 0; i < aProps.length; i++) {
-      var propName = aProps[i];
+    for (let i = 0; i < aProps.length; i++) {
+      let propName = aProps[i];
 
       // If values of same property are not equal,
       // objects are not equivalent
@@ -421,7 +427,6 @@
           toggle(el, settings);
         }
       });
-      programmaticallyClosed = true;
     }
 
     return target;
@@ -478,20 +483,20 @@
   // ====================
 
   function calculateMultiplier(value) {
-    let targetDuration = targetValues.duration;
+    let totalDuration = targetValues.duration + targetValues.delay;
     let factor = (targetValues.axis === 'x' ? (targetValues.movedX / (targetValues.difference / 100)) : (targetValues.movedY / (targetValues.difference / 100))) / 100;
     let delay = parseInt(value.delay === 0 ? targetValues.delay : value.delay);
     let duration = parseInt(value.duration === 0 ? targetValues.duration : value.duration);
-    let delayFactor = delay/targetDuration;
-    let durationFactor = duration/targetDuration;
-    let X = (factor-delayFactor)*((targetDuration/(duration*durationFactor))*durationFactor);
+    let delayFactor = delay/totalDuration;
+    let durationFactor = duration/totalDuration;
+    let X = (factor-delayFactor)*((totalDuration/(duration*durationFactor))*durationFactor);
     X = Math.max(0, Math.min(1, X));
     return X;
   }
 
 
-  // Set buddy styling
-  // =================
+  // Set styling
+  // ===========
 
   function setStyling(element, buddyValues, settings) {
     let transforms = [];
@@ -531,7 +536,7 @@
   // Transitions following the touch
   // ===============================
 
-  function transitionWithGesture(element, translatedX, translatedY, touchmoveX, touchmoveY, isBetween, settings) {
+  function transitionWithGesture(element, translatedX, translatedY, touchmoveX, touchmoveY, settings) {
     let movedX = Math.abs(touchmoveX - touchstartX);
     let movedY = Math.abs(touchmoveY - touchstartY);
 
@@ -539,15 +544,12 @@
     targetValues.movedX = movedX;
     targetValues.movedY = movedY;
 
-    // Only style if we're inbetween
-    if (isBetween && buddies) {
-      buddies.forEach(function (buddy, i) {
-        let count = (buddy.className.match(/openedby:/g) || []).length;
-        if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute('data-touch-id')))) {
-          setStyling(buddy, buddiesValues[i], settings);
-        }
-      });
-    }
+    buddies.forEach(function (buddy, i) {
+      let count = (buddy.className.match(/openedby:/g) || []).length;
+      if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute('data-touch-id')))) {
+        setStyling(buddy, buddiesValues[i], settings);
+      }
+    });
   }
 
 
@@ -560,7 +562,6 @@
     lastDifference = false;
     moveDirection = 'forward';
     target = false;
-    programmaticallyClosed = false;
     targetValues = [];
     buddies = [];
     buddiesValues = [];
@@ -688,10 +689,10 @@
     let settings;
 
 
-    // Touch start
-    // ===========
+    // Start handler
+    // =============
 
-    function touchstartHandler(event) {
+    function startHandler(event) {
 
       // Return false if target is not a gesture zone
       if (!event.target.closest(gestureZones)) return false;
@@ -704,8 +705,8 @@
       resetValues();
 
       // Movement variables
-      touchstartX = event.changedTouches[0].screenX;
-      touchstartY = event.changedTouches[0].screenY;
+      touchstartX = event.screenX || event.changedTouches[0].screenX;
+      touchstartY = event.screenY || event.changedTouches[0].screenY;
 
       // Event target
       const eventTarget = event.target.closest(gestureZones);
@@ -739,23 +740,20 @@
     }
 
 
-    // Touch move
-    // ==========
+    // Move handler
+    // ============
 
-    function touchmoveHandler(event) {
+    function moveHandler(event) {
 
-      // Return false for wrong elements
-      if (!event.target.closest(gestureZones)) return false;
+      // Return false if applicable
       if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
-
-      // Return false if target is already transitioning
       if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Variables
-      let touchmoveX = event.changedTouches[0].screenX;
-      let touchmoveY = event.changedTouches[0].screenY;
+      let touchmoveX = event.screenX || event.changedTouches[0].screenX;
+      let touchmoveY = event.screenY || event.changedTouches[0].screenY;
       let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.from) : false;
       let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.from) : false;
       let difference = (targetValues.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
@@ -774,100 +772,33 @@
       }
 
       // Transition
-      transitionWithGesture(target, translatedX, translatedY, touchmoveX, touchmoveY, isBetween, settings);
+      if (isBetween) {
+        transitionWithGesture(target, translatedX, translatedY, touchmoveX, touchmoveY, settings);
+      }
     }
 
 
-    // Touch end
-    // =========
+    // End handler
+    // ===========
 
-    function touchendHandler(event) {
+    function endHandler(event) {
 
-      // Return false for wrong elements
-      if (!event.target.closest(gestureZones)) return false;
+      // Return false if applicable
       if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
-
-      // Return false if target is already transitioning
       if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Variables
-      touchendX = event.changedTouches[0].screenX;
-      touchendY = event.changedTouches[0].screenY;
+      touchendX = event.offsetX || event.changedTouches[0].screenX;
+      touchendY = event.offsetY || event.changedTouches[0].screenY;
 
       // Handle the gesture
-      if (touchstartX === touchendX && touchstartY === touchendY) {
-        touchstart = false;
-        clickHandler(event);
-      } else {
-        handleGesture(event, target, moveDirection, settings);
-      }
+      if (touchstartX === touchendX && touchstartY === touchendY) return false;
+
+      // Handle touch gesture
+      handleGesture(event, target, moveDirection, settings);
     }
-
-
-    // Click listener
-    // ==============
-
-    function clickHandler(event) {
-
-      // Return false
-      if (touchstart) return false;
-
-      // Prevent default when element is programmatically closed
-      if (programmaticallyClosed) {
-        event.preventDefault();
-
-        // Re-set programmatically closed for next event
-        programmaticallyClosed = false;
-      }
-
-      // Return for wrong elements
-      if (!event.target.closest(settings.controls) && !event.target.closest(settings.closes)) return false;
-
-      // Reset for new click event
-      resetValues();
-
-      // Prevent default
-      event.preventDefault();
-
-      // Variables
-      const controlTarget = event.target.closest(settings.controls);
-      const closeTarget = event.target.closest(settings.closes);
-      let targets = [];
-
-      // When event target is a "close button"
-      if (closeTarget) {
-        let toClose = closeTarget.getAttribute(['data-touch-closes']);
-        toClose = toClose.split(',');
-
-        // Close each target
-        toClose.forEach(function (el) {
-          el = document.querySelector('[data-touch-id="' + el + '"]');
-          if (el.classList.contains(settings.openClass)) {
-            targets.push(getTarget(el, settings));
-          }
-        });
-      }
-      // When target is a "control"
-      else {
-        targets.push(getTarget(controlTarget, settings));
-      }
-
-      // Handle targets
-      targets.forEach(function (target) {
-        target.classList.add(settings.transitioningClass);
-        toggle(target, settings);
-        target.ontransitionend = function() {
-          target.classList.remove(settings.transitioningClass);
-          target.classList.remove(settings.touchmoveClass);
-        }
-      });
-
-      // Remove overflow hidden from body
-      document.body.removeAttribute('style');
-    }
-
 
     /**
      * Toggle
@@ -899,10 +830,14 @@
       });
 
       // Event listeners
-      window.addEventListener('click', clickHandler, true);
-      window.addEventListener('touchstart', touchstartHandler, true);
-      window.addEventListener('touchmove', touchmoveHandler, true);
-      window.addEventListener('touchend', touchendHandler, true);
+      window.addEventListener('touchstart', startHandler, true);
+      window.addEventListener('touchmove', moveHandler, true);
+      window.addEventListener('touchend', endHandler, true);
+      window.addEventListener('mousedown', startHandler, true);
+      if (settings.clickDrag) {
+        window.addEventListener('mousemove', moveHandler, true);
+      }
+      window.addEventListener('mouseup', endHandler, true);
 
     };
 

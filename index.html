@@ -53,7 +53,7 @@
 
     .overlay.is-open {
         opacity: 1;
-        transform: scale(1.2) translateX(50%);
+        transform: scale(1.2);
         cursor: pointer;
         pointer-events: initial;
         touch-action: initial;
@@ -84,6 +84,7 @@
 
     .bottom.is-open {
         transition-duration: 300ms;
+        /*transition-delay: 300ms;*/
         transform: translateY(1rem) scale(.9);
         z-index: 3;
     }
