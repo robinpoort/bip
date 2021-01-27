@@ -26,11 +26,10 @@
     }
 
     .wrapper {
-        background: #fff;
+        background: #ecf0f1;
         width: 100%;
         height: 100%;
         overflow: hidden;
-        will-change: transform;
     }
 
     /* Demo styling */
@@ -44,7 +43,7 @@
         background: rgba(0, 0, 0, .5);
         opacity: 0;
         transition: opacity 200ms linear, transform 200ms linear, width 200ms linear;
-        transform: scale(.6);
+        /*transform: scale(.6);*/
         pointer-events: none;
         touch-action: none;
         backdrop-filter: blur(5px);
@@ -53,7 +52,7 @@
 
     .overlay.is-open {
         opacity: 1;
-        transform: scale(1.2);
+        /*transform: scale(1.2, 2);*/
         cursor: pointer;
         pointer-events: initial;
         touch-action: initial;
@@ -90,7 +89,7 @@
     }
 
     .bottom button.is-open {
-        transform: translateX(-40vw) scale(1.2);
+        transform: translate(-40vw, -100%) scale(1.2);
     }
 
     .top button,
@@ -128,6 +127,8 @@
     .right,
     .left {
         height: 100%;
+        width: 50vw;
+        max-width: 240px;
         transition: transform 300ms ease-out;
     }
 
@@ -145,7 +146,6 @@
     .left button {
         position: absolute;
         top: 0;
-        height: 4rem;
     }
 
     .right {
@@ -167,18 +167,22 @@
     }
 
     button {
-        width: 4rem;
-        height: 4rem;
+        margin: .5rem;
+        width: 3.6rem;
+        height: 3.6rem;
         background: #fff;
         border: 1px solid #ddd;
-        line-height: 44px;
         text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        padding: 0;
     }
 
     .content {
-        padding: 2rem;
+        padding: 4rem 2rem;
         will-change: auto;
-        cursor: pointer;
         transition: transform 200ms linear 100ms;
         transform: scale(1);
     }
@@ -187,34 +191,147 @@
         transform: scale(.5);
     }
 
+    .hamburger {
+        position: relative;
+        display: block;
+        width: 40px;
+        height: 40px;
+    }
+
+    .burger1,
+    .burger2,
+    .burger3 {
+        content: " ";
+        display: block;
+        position: absolute;
+        width: 40px;
+        height: 4px;
+        transition: opacity 200ms linear, transform 200ms linear;
+        border-radius: 4px;
+        background-color: #34495e;
+    }
+
+    .burger1 {
+        top: 50%;
+        display: block;
+        margin-top: -2px;
+        transform: scale(1);
+    }
+
+    .burger2 {
+        transform: translate(0, 0) rotate(0deg);
+        top: calc(50% - 12px);
+    }
+
+    .burger3 {
+        transform: translate(0, 0) rotate(0deg);
+        bottom: calc(50% - 12px);
+    }
+
+    .burger1.is-open {
+        transform: scale(0);
+    }
+
+    .burger2.is-open {
+        transform: translate(0, 10px) rotate(-45deg);
+    }
+
+    .burger3.is-open  {
+        transform: translate(0, -10px) rotate(45deg);
+    }
+
+    .arrow {
+        position: relative;
+        display: block;
+        width: 40px;
+        height: 40px;
+    }
+
+    .arrow1,
+    .arrow2 {
+        content: " ";
+        display: block;
+        position: absolute;
+        width: 30px;
+        height: 4px;
+        transition: transform 200ms linear;
+        border-radius: 4px;
+        background-color: #34495e;
+    }
+
+    .arrow1 {
+        transform: translate(-25px, 0) rotate(45deg);
+        top: 45%;
+        left: 50%;
+    }
+
+    .arrow2 {
+        transform: translate(25px, 0) rotate(-45deg);
+        top: 45%;
+        right: 50%;
+    }
+
+    .arrow1.is-open {
+        transform: translate(-25px, 0) rotate(135deg);
+    }
+
+    .arrow2.is-open  {
+        transform: translate(25px, 0) rotate(-135deg);
+    }
+
+    .bottom .arrow {
+        transform: rotate(180deg);
+    }
 </style>
 <body>
 
 <div class="wrapper">
     <div class="overlay" data-touch-id="overlay" data-touch-closes="top,right,bottom,left"></div>
-    <div class="top" data-touch data-touch-id="top" data-touch-buddies="overlay">
-        <button type="button" data-touch-controls="top">Down</button>
+    <div class="top" data-touch data-touch-id="top" data-touch-buddies="overlay,content,arrow1top,arrow2top">
+        <button type="button" data-touch-controls="top">
+            <span class="arrow">
+                <span class="arrow1" data-touch-id="arrow1top"></span>
+                <span class="arrow2" data-touch-id="arrow2top"></span>
+            </span>
+        </button>
         <h1>Top</h1>
         <p>Top details</p>
         <p>Top details</p>
         <p>Top details</p>
     </div>
-    <div class="right" data-touch data-touch-id="right" data-touch-buddies="overlay">
-        <button type="button" data-touch-controls="right">Left</button>
+    <div class="right" data-touch data-touch-id="right" data-touch-buddies="overlay,burger1left,burger2left,burger3left">
+        <button type="button" data-touch-controls="right">
+            <span class="hamburger">
+                <span class="burger1" data-touch-id="burger1left"></span>
+                <span class="burger2" data-touch-id="burger2left"></span>
+                <span class="burger3" data-touch-id="burger3left"></span>
+            </span>
+        </button>
         <h1>Right</h1>
         <p>Right details</p>
         <p>Right details</p>
         <p>Right details</p>
     </div>
-    <div class="bottom" data-touch data-touch-id="bottom" data-touch-buddies="overlay,bottombutton,content">
-        <button type="button" data-touch-controls="bottom" data-touch-id="bottombutton">Up</button>
+    <div class="bottom" data-touch data-touch-id="bottom" data-touch-buddies="overlay,bottombutton,content,arrow1bottom,arrow2bottom">
+        <button type="button" data-touch-controls="bottom" data-touch-id="bottombutton">
+            <span class="arrow">
+                <span class="arrow1" data-touch-id="arrow1bottom"></span>
+                <span class="arrow2" data-touch-id="arrow2bottom"></span>
+            </span>
+        </button>
         <h1>Bottom</h1>
         <p>Bottom details</p>
         <p>Bottom details</p>
         <p>Bottom details</p>
     </div>
-    <div class="left" data-touch data-touch-id="left" data-touch-buddies="overlay">
-        <button type="button" data-touch-controls="left">Right</button>
+    <div class="left" data-touch data-touch-id="left" data-touch-buddies="overlay,burger1right,burger2right,burger3right">
+        <button type="button" data-touch-controls="left">
+            <span class="hamburger">
+                <span class="burger1" data-touch-id="burger1right"></span>
+                <span class="burger2" data-touch-id="burger2right"></span>
+                <span class="burger3" data-touch-id="burger3right"></span>
+            </span>
+        </button>
         <h1>Left</h1>
         <p>Left details</p>
         <p>Left details</p>

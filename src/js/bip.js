@@ -312,14 +312,14 @@
       "delay": to.delay !== 0 ? to.delay : from.delay,
       "duration": to.duration !== 0 ? to.duration : from.duration
     };
-    if (dimension === 2) {
+    if (dimension === 2 && to !== false) {
       values.unit = to.value.unit;
       values.dir = (from.value.x < to.value.x) ? 'up' : 'down';
       values.difference = calculateDifference(from.value.x, to.value.x, difference).difference;
       values.ydir = (from.value.y < to.value.y) ? 'up' : 'down';
       values.ydifference = calculateDifference(from.value.y, to.value.y, difference).difference;
     }
-    if (values.difference === 0 && values.ydifference === 0) return false;
+    else if (values.difference === 0 && values.ydifference === 0) return false;
     return values;
   }
 
@@ -370,12 +370,10 @@
 
     // Add properties and values to the object
     settings.matrixValues.forEach(function(el) {
-      if (fromValues[el] && toValues[el] && !isEquivalent(fromValues[el], toValues[el])) {
         const elCalculations = getCalculations(fromValues[el], toValues[el], difference, 2);
         if (elCalculations) {
           returnValues[el] = elCalculations
         }
-      }
     });
     settings.cssValues.forEach(function(el) {
       if (!isEquivalent(fromValues[el], toValues[el])) {
@@ -635,7 +633,7 @@
     target.classList.add(settings.transitioningClass);
 
     // @TODO: add remaining duration time per prop (see multiplier value in buddiesValues)
-    if (diff > threshold && moveDirection === 'forward') {
+    if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
       toggle(target, settings);
     } else {
       resetStyle(target);
@@ -790,11 +788,8 @@
       if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Variables
-      touchendX = event.offsetX || event.changedTouches[0].screenX;
-      touchendY = event.offsetY || event.changedTouches[0].screenY;
-
-      // Handle the gesture
-      if (touchstartX === touchendX && touchstartY === touchendY) return false;
+      touchendX = event.screenX || event.changedTouches[0].screenX;
+      touchendY = event.screenY || event.changedTouches[0].screenY;
 
       // Handle touch gesture
       handleGesture(event, target, moveDirection, settings);
