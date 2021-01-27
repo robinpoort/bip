@@ -473,6 +473,7 @@
       "difference": getDifference(from, to),
       "delay": transitionValues.translate.delay,
       "duration": transitionValues.translate.duration,
+      "totalDuration": transitionValues.translate.delay + transitionValues.translate.duration
     };
   }
 
@@ -481,7 +482,7 @@
   // ====================
 
   function calculateMultiplier(value) {
-    let totalDuration = targetValues.duration + targetValues.delay;
+    let totalDuration = targetValues.totalDuration;
     let factor = (targetValues.axis === 'x' ? (targetValues.movedX / (targetValues.difference / 100)) : (targetValues.movedY / (targetValues.difference / 100))) / 100;
     let delay = parseInt(value.delay === 0 ? targetValues.delay : value.delay);
     let duration = parseInt(value.duration === 0 ? targetValues.duration : value.duration);
@@ -496,11 +497,14 @@
   // Set styling
   // ===========
 
-  function setStyling(element, buddyValues, settings) {
+  function setStyling(element, buddyValues, settings, properties) {
     let transforms = [];
+    let transitionProperties = [];
+    let transitionDurations = [];
+    let multiplier = 1;
     settings.matrixValues.forEach(function(prop) {
       if (buddyValues[prop] !== undefined) {
-        let multiplier = calculateMultiplier(buddyValues[prop]);
+        multiplier = calculateMultiplier(buddyValues[prop]);
         if (multiplier) {
           let x = (parseFloat(buddyValues[prop].from.x) < parseFloat(buddyValues[prop].to.x)) ? parseFloat(buddyValues[prop].from.x) + (buddyValues[prop].difference * multiplier) : parseFloat(buddyValues[prop].from.x) - (buddyValues[prop].difference * multiplier);
           let y = (parseFloat(buddyValues[prop].from.y) < parseFloat(buddyValues[prop].to.y)) ? parseFloat(buddyValues[prop].from.y) + (buddyValues[prop].ydifference * multiplier) : parseFloat(buddyValues[prop].from.y) - (buddyValues[prop].ydifference * multiplier) || false;
@@ -512,22 +516,44 @@
         }
       }
     });
-    transforms = transforms.join(' ');
-    element.style.transform = transforms;
+    if (properties === 'all') {
+      transforms = transforms.join(' ');
+      element.style.transform = transforms;
+    } else {
+      transitionProperties.push("transform");
+      transitionDurations.push((targetValues.totalDuration) * (properties === 'toggle' ? (1 - multiplier) : multiplier) + 'ms');
+    }
+
     settings.cssValues.forEach(function(prop) {
       if (prop !== undefined) {
         let buddyValue = buddyValues[prop];
         if (buddyValue !== undefined) {
-          let multiplier = calculateMultiplier(buddyValue);
+          multiplier = calculateMultiplier(buddyValue);
           buddyValue.multiplier = multiplier;
-          if (buddyValue.from < buddyValue.to) {
-            element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
+          if (properties === 'all') {
+            if (buddyValue.from < buddyValue.to) {
+              element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
+            } else {
+              element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
+            }
           } else {
-            element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
+            transitionProperties.push(prop);
+            transitionDurations.push((targetValues.totalDuration) * (properties === 'toggle' ? (1 - buddyValue.multiplier) : buddyValue.multiplier) + 'ms');
           }
         }
       }
     });
+
+    // Set durations
+    if (properties !== 'all') {
+      element.style.transitionProperty = transitionProperties;
+      element.style.transitionDuration = transitionDurations;
+      element.ontransitionend = function(event) {
+        if (event.target === element) {
+          element.removeAttribute('style');
+        }
+      }
+    }
   }
 
 
@@ -545,7 +571,7 @@
     buddies.forEach(function (buddy, i) {
       let count = (buddy.className.match(/openedby:/g) || []).length;
       if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute('data-touch-id')))) {
-        setStyling(buddy, buddiesValues[i], settings);
+        setStyling(buddy, buddiesValues[i], settings, 'all');
       }
     });
   }
@@ -580,12 +606,12 @@
     // @TODO: rebuild now our target is also a buddy?
 
     // Reset target (and buddies)
-    resetStyle(target);
+    resetStyle(target, settings);
     target.classList.toggle(settings.openClass);
 
     // Handle buddies
     if (buddies.length > 0) {
-      buddies.forEach(function (buddy) {
+      buddies.forEach(function (buddy, i) {
         if (target.classList.contains(settings.openClass)) {
           buddy.classList.add(settings.openClass, 'openedby:' + target.getAttribute('data-touch-id'));
         } else {
@@ -595,6 +621,7 @@
             buddy.classList.remove(settings.openClass);
           }
         }
+        setStyling(buddy, buddiesValues[i], settings, 'toggle');
       });
     }
 
@@ -612,11 +639,12 @@
   // Reset styling
   // =============
 
-  function resetStyle(target) {
+  function resetStyle(target, settings) {
     target.removeAttribute('style');
     if (buddies) {
-      buddies.forEach(function (buddy) {
+      buddies.forEach(function (buddy, i) {
         buddy.removeAttribute('style');
+        setStyling(buddy, buddiesValues[i], settings, 'reset');
       });
     }
   }
@@ -636,28 +664,22 @@
     if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
       toggle(target, settings);
     } else {
-      resetStyle(target);
+      resetStyle(target, settings);
     }
 
     // Reset body styling
     document.body.removeAttribute('style');
 
-    // Remove the transitioning class
-    target.ontransitionend = function() {
-      target.classList.remove(settings.transitioningClass);
-      target.removeAttribute('style');
-      target.classList.remove(settings.touchmoveClass);
-      touchstart = false;
-    }
+    // Remove touchmove class
+    target.classList.remove(settings.touchmoveClass);
 
-    // Remove classes when target final duration is done
-    // @TODO: merge above and below and take into consideration the remaining duration of longest element
-    setTimeout(function() {
-      target.classList.remove(settings.transitioningClass);
-      target.removeAttribute('style');
-      target.classList.remove(settings.touchmoveClass);
-      touchstart = false;
-    }, targetValues.duration)
+    // Remove the transitioning class
+    target.ontransitionend = function(event) {
+      if (event.target === target) {
+        target.classList.remove(settings.transitioningClass);
+        touchstart = false;
+      }
+    }
 
     // Emit dragged event
     emitEvent('bipDragged', settings);

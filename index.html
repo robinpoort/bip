@@ -40,10 +40,10 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, .5);
+        background: rgba(0, 0, 0, 1);
         opacity: 0;
-        transition: opacity 200ms linear, transform 200ms linear, width 200ms linear;
-        /*transform: scale(.6);*/
+        transition: opacity 5000ms linear, transform 5000ms linear, width 2000ms linear;
+        transform: scale(.6);
         pointer-events: none;
         touch-action: none;
         backdrop-filter: blur(5px);
@@ -52,11 +52,11 @@
 
     .overlay.is-open {
         opacity: 1;
-        /*transform: scale(1.2, 2);*/
+        transform: scale(1.2, 2);
         cursor: pointer;
         pointer-events: initial;
         touch-action: initial;
-        /*width: 50%;*/
+        width: 80%;
     }
 
     .top,
@@ -73,7 +73,7 @@
     .top,
     .bottom {
         width: 100%;
-        transition: transform 500ms;
+        transition: transform 5000ms;
     }
 
     .top.is-open {
@@ -82,7 +82,6 @@
     }
 
     .bottom.is-open {
-        transition-duration: 300ms;
         /*transition-delay: 300ms;*/
         transform: translateY(1rem) scale(.9);
         z-index: 3;
@@ -129,7 +128,7 @@
         height: 100%;
         width: 50vw;
         max-width: 240px;
-        transition: transform 300ms ease-out;
+        transition: transform 5000ms ease-out;
     }
 
     .right.is-open,
@@ -138,7 +137,8 @@
         z-index: 3;
     }
 
-    .is-touchmove {
+    .is-touchmove,
+    .is-transitioning {
         z-index: 3;
     }
 
@@ -350,7 +350,7 @@
 <!-- initialize -->
 <script type="text/javascript">
     const bip = new Bip('[data-touch]', {
-        // cssValues: ['opacity', 'width', 'height', 'top', 'right', 'bottom', 'left']
+        cssValues: ['opacity', 'width']
     });
 
     // console.log(bip);
