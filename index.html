@@ -42,7 +42,7 @@
         height: 100%;
         background: rgba(0, 0, 0, 1);
         opacity: 0;
-        transition: opacity 5000ms linear, transform 5000ms linear, width 2000ms linear;
+        transition: opacity 500ms linear, transform 500ms linear;
         transform: scale(.6);
         pointer-events: none;
         touch-action: none;
@@ -73,7 +73,7 @@
     .top,
     .bottom {
         width: 100%;
-        transition: transform 5000ms;
+        transition: transform 500ms;
     }
 
     .top.is-open {
@@ -128,7 +128,7 @@
         height: 100%;
         width: 50vw;
         max-width: 240px;
-        transition: transform 5000ms ease-out;
+        transition: transform 500ms ease-out;
     }
 
     .right.is-open,
@@ -183,7 +183,7 @@
     .content {
         padding: 4rem 2rem;
         will-change: auto;
-        transition: transform 1000ms linear 1000ms;
+        transition: transform 200ms linear 100ms;
         transform: scale(1);
         height: 100vh;
         display: flex;
@@ -193,7 +193,6 @@
 
     .content.is-open {
         transform: scale(.5);
-        transition-duration: 4000ms;
     }
 
     .hamburger {
