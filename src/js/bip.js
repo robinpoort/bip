@@ -439,7 +439,7 @@
     // Get target buddies list
     let buddylist = target.getAttribute('data-touch-buddies') || false;
 
-    // @TODO: fix this properly, we want the main target tpo be just another "buddy" (rename buddies)
+    // Push the target itself as a buddy
     buddies.push(target);
 
     // When target has buddies
@@ -465,7 +465,6 @@
     const from = parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y);
     const to = parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y);
 
-
     return {
       "axis": transitionValues.axis,
       "from": from,
@@ -488,9 +487,18 @@
     let duration = parseInt(value.duration === 0 ? targetValues.duration : value.duration);
     let delayFactor = delay/totalDuration;
     let durationFactor = duration/totalDuration;
-    let X = (factor-delayFactor)*((totalDuration/(duration*durationFactor))*durationFactor);
-    X = Math.max(0, Math.min(1, X));
-    return X;
+    let x = (factor-delayFactor)*((totalDuration/(duration*durationFactor))*durationFactor);
+    let xRound = Math.max(0, Math.min(1, x));
+    return {
+      "value": x,
+      "x": xRound,
+      "delay": delay,
+      "duration": duration,
+      "toggleDuration": totalDuration * (1 - xRound),
+      "toggleDelay": (((totalDuration - delay) / totalDuration) * x) * -1000,
+      "resetDuration": totalDuration - (totalDuration * (1 - xRound)),
+      "resetDelay": -Math.abs(delay) * x,
+    };
   }
 
 
@@ -501,17 +509,22 @@
     let transforms = [];
     let transitionProperties = [];
     let transitionDurations = [];
+    let transitionDelays = [];
+    let multiplierRoot = [];
     let multiplier = 1;
     settings.matrixValues.forEach(function(prop) {
       if (buddyValues[prop] !== undefined) {
-        multiplier = calculateMultiplier(buddyValues[prop]);
+        multiplierRoot = calculateMultiplier(buddyValues[prop]);
+        multiplier = multiplierRoot.x;
         if (multiplier) {
           let x = (parseFloat(buddyValues[prop].from.x) < parseFloat(buddyValues[prop].to.x)) ? parseFloat(buddyValues[prop].from.x) + (buddyValues[prop].difference * multiplier) : parseFloat(buddyValues[prop].from.x) - (buddyValues[prop].difference * multiplier);
           let y = (parseFloat(buddyValues[prop].from.y) < parseFloat(buddyValues[prop].to.y)) ? parseFloat(buddyValues[prop].from.y) + (buddyValues[prop].ydifference * multiplier) : parseFloat(buddyValues[prop].from.y) - (buddyValues[prop].ydifference * multiplier) || false;
           buddyValues[prop].multiplier = multiplier;
+          buddyValues[prop].value = multiplierRoot.value
           transforms.push(prop + '(' + x + buddyValues[prop].unit + (y ? ',' + y + buddyValues[prop].unit + ')' : ')'));
           if (element === target && prop === settings.calculator) {
             targetValues.finalMove = {"x": x, "y": y};
+            targetValues.finalMultiplier = multiplier;
           }
         }
       }
@@ -521,15 +534,18 @@
       element.style.transform = transforms;
     } else {
       transitionProperties.push("transform");
-      transitionDurations.push((targetValues.totalDuration) * (properties === 'toggle' ? (1 - multiplier) : multiplier) + 'ms');
+      transitionDurations.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration)) + 'ms');
+      transitionDelays.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay)) + 'ms');
     }
 
     settings.cssValues.forEach(function(prop) {
       if (prop !== undefined) {
         let buddyValue = buddyValues[prop];
         if (buddyValue !== undefined) {
-          multiplier = calculateMultiplier(buddyValue);
+          multiplierRoot = calculateMultiplier(buddyValue);
+          multiplier = multiplierRoot.x;
           buddyValue.multiplier = multiplier;
+          buddyValue.vaue = multiplierRoot.value;
           if (properties === 'all') {
             if (buddyValue.from < buddyValue.to) {
               element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
@@ -538,7 +554,8 @@
             }
           } else {
             transitionProperties.push(prop);
-            transitionDurations.push((targetValues.totalDuration) * (properties === 'toggle' ? (1 - buddyValue.multiplier) : buddyValue.multiplier) + 'ms');
+            transitionDurations.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration)) + 'ms');
+            transitionDelays.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay)) + 'ms');
           }
         }
       }
@@ -548,6 +565,7 @@
     if (properties !== 'all') {
       element.style.transitionProperty = transitionProperties;
       element.style.transitionDuration = transitionDurations;
+      element.style.transitionDelay = transitionDelays;
       element.ontransitionend = function(event) {
         if (event.target === element) {
           element.removeAttribute('style');

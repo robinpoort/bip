@@ -51,12 +51,12 @@
     }
 
     .overlay.is-open {
-        opacity: 1;
+        opacity: .6;
         transform: scale(1.2, 2);
         cursor: pointer;
         pointer-events: initial;
         touch-action: initial;
-        width: 80%;
+        /*width: 80%;*/
     }
 
     .top,
@@ -183,12 +183,17 @@
     .content {
         padding: 4rem 2rem;
         will-change: auto;
-        transition: transform 200ms linear 100ms;
+        transition: transform 1000ms linear 1000ms;
         transform: scale(1);
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .content.is-open {
         transform: scale(.5);
+        transition-duration: 4000ms;
     }
 
     .hamburger {
@@ -350,7 +355,7 @@
 <!-- initialize -->
 <script type="text/javascript">
     const bip = new Bip('[data-touch]', {
-        cssValues: ['opacity', 'width']
+        // cssValues: ['opacity', 'width']
     });
 
     // console.log(bip);
