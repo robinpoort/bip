@@ -798,8 +798,9 @@
         buddiesValues.push(getTransitionValues(buddy, target, settings));
       });
 
-      // Disable styling
+      // Disable styling and disable user-select
       document.body.style.overflow = 'hidden';
+      document.body.classList.add('bip-busy');
       target.classList.add(settings.touchmoveClass);
 
       // Set touchstart to true
@@ -856,6 +857,9 @@
 
     function endHandler(event) {
 
+      // remove the bip busy class so user can select again
+      document.body.classList.remove('bip-busy');
+
       // Return false if applicable
       if (!touchstart) return false;
       if (!target) return false;
@@ -905,6 +909,11 @@
         });
       });
 
+      // Make sure no text will be selected while dragging
+      const style = document.createElement('style');
+      style.innerHTML = '.bip-busy * { user-select: none; }';
+      const ref = document.querySelector('script');
+      ref.parentNode.insertBefore(style, ref);
 
       // Event listeners
       window.addEventListener('touchstart', startHandler, true);
