@@ -23,12 +23,14 @@
   // =================
   let defaults = {
 
-    selector: '[data-touch]',
-    controls: '[data-touch-controls]',
-    closes: '[data-touch-closes]',
+    buddies: 'data-touch-buddies',
+    controllers: 'data-touch-controllers',
+    id: 'data-touch-id',
+    ignore: 'data-touch-ignore',
     calculator: 'translate',
 
     threshold: 0.2,
+    difference: 10,
     openClass: 'is-open',
     transitioningClass: 'is-transitioning',
     touchmoveClass: 'is-touchmove',
@@ -37,7 +39,6 @@
     cssValues: ['opacity'],
 
     clickDrag: true,
-
     emitEvents: true
   };
 
@@ -48,12 +49,25 @@
   let touchendY = 0;
   let lastDifference = false;
   let moveDirection = 'forward';
-  let gestureZones = false;
   let target = false;
   let targetValues = [];
   let buddies = [];
   let buddiesValues = [];
   let ignore = false;
+
+
+  // Reset values
+  // ============
+
+  function resetValues() {
+    touchstart = false;
+    lastDifference = false;
+    moveDirection = 'forward';
+    target = false;
+    targetValues = [];
+    buddies = [];
+    buddiesValues = [];
+  }
 
 
   // Closest polyfill
@@ -84,11 +98,10 @@
   // ==========
 
   function emitEvent(type, settings, details) {
-    if (typeof window.CustomEvent !== 'function') return;
+    if (!settings.emitEvents || typeof window.CustomEvent !== 'function') return;
     let event = new CustomEvent(type, {
       bubbles: true,
-      detail: details,
-      settings: settings
+      detail: details
     });
     document.dispatchEvent(event);
   }
@@ -391,40 +404,37 @@
   // Get target
   // ==========
 
-  function getTarget(element, settings) {
-    // See if element is either a controller or closing element
-    const isControllerEl = element.getAttribute('data-touch-controls') || false;
-    let isClosingEl = element.getAttribute('data-touch-closes') || false;
+  function getTarget(isControl, isSelector, settings) {
 
-    // When element is a closing element
-    if (isClosingEl) {
-      let controllerList = [];
-      isClosingEl = isClosingEl.split(',');
-      isClosingEl.forEach(function (controller) {
-        controller = document.querySelector('[data-touch-id="' + controller + '"]');
-        if (controller.classList.contains(settings.openClass)) {
-          controllerList.push(controller);
-        }
-      });
-      if (controllerList.length === 1) {
-        target = controllerList[0];
+    // When target is a selector
+    if (isSelector) {
+      target = isSelector;
+    }
+
+    // When target is a controller
+    if (isControl) {
+      let count = (isControl.controls.className.match(/openedby:/g) || []);
+      if (count.length === 1) {
+        target = isControl.target;
       } else {
         target = false;
       }
-    } else {
-      target = isControllerEl ? document.querySelector('[data-touch-id="' + isControllerEl + '"]') : element;
     }
 
+    // Get buddies for target
     if (target) {
-      buddies = getBuddies(target, element) || false;
-    } else {
-      document.querySelectorAll('[data-touch]').forEach(function(el) {
-        if (el.classList.contains(settings.openClass)) {
-          // Reset buddies and toggle elements
+      buddies = getBuddies(target, settings) || false;
+    }
+
+    // When multiple targets are found, close all applicable targets
+    if (!target) {
+      isControl.controls.classList.forEach(function(cls) {
+        if (cls.match(/openedby:/g)) {
+          const el = document.querySelector('[' + settings.id + '="'+cls.split(':')[1]+'"]');
           buddies = [];
-          toggle(el, settings);
+          toggle(el, settings, false);
         }
-      });
+      })
     }
 
     return target;
@@ -434,22 +444,26 @@
   // Get buddies
   // ===========
 
-  function getBuddies(target) {
+  function getBuddies(target, settings) {
 
     // Get target buddies list
-    let buddylist = target.getAttribute('data-touch-buddies') || false;
+    let buddylist = document.querySelectorAll(target.getAttribute(settings.buddies)) || false;
+    let controlslist = document.querySelectorAll(target.getAttribute(settings.controllers)) || false;
 
     // Push the target itself as a buddy
     buddies.push(target);
 
     // When target has buddies
-    if (buddylist) {
-      buddylist = buddylist.split(',');
+    if (buddylist.length) {
       buddylist.forEach(function (buddy) {
-        buddy = document.querySelector('[data-touch-id="' + buddy + '"]');
-        if (buddy) {
-          buddies.push(buddy);
-        }
+        buddies.push(buddy);
+      });
+    }
+
+    // Add controls as buddies
+    if (controlslist.length) {
+      controlslist.forEach(function (buddy) {
+        buddies.push(buddy);
       });
     }
 
@@ -512,6 +526,8 @@
     let transitionDelays = [];
     let multiplierRoot = [];
     let multiplier = 1;
+
+    // Loop through matrix values
     settings.matrixValues.forEach(function(prop) {
       if (buddyValues[prop] !== undefined) {
         multiplierRoot = calculateMultiplier(buddyValues[prop]);
@@ -529,15 +545,21 @@
         }
       }
     });
+
+    // Set transforms
     if (properties === 'all') {
       transforms = transforms.join(' ');
       element.style.transform = transforms;
-    } else {
+    }
+
+    // Set transition properties
+    else {
       transitionProperties.push("transform");
       transitionDurations.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration)) + 'ms');
       transitionDelays.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay)) + 'ms');
     }
 
+    // Loop through CSS values
     settings.cssValues.forEach(function(prop) {
       if (prop !== undefined) {
         let buddyValue = buddyValues[prop];
@@ -561,7 +583,7 @@
       }
     });
 
-    // Set durations
+    // Set transition properties
     if (properties !== 'all') {
       element.style.transitionProperty = transitionProperties;
       element.style.transitionDuration = transitionDurations;
@@ -588,81 +610,68 @@
 
     buddies.forEach(function (buddy, i) {
       let count = (buddy.className.match(/openedby:/g) || []).length;
-      if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute('data-touch-id')))) {
+      if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute(settings.id)))) {
         setStyling(buddy, buddiesValues[i], settings, 'all');
       }
     });
   }
 
 
-  // Reset values
-  // ============
-  // @TODO: work with global variables?
-
-  function resetValues() {
-    touchstart = false;
-    lastDifference = false;
-    moveDirection = 'forward';
-    target = false;
-    targetValues = [];
-    buddies = [];
-    buddiesValues = [];
-  }
-
-
   // Toggle
   // ======
-  // @TODO: Add remaining duration here
 
-  function toggle(target, settings) {
+  function toggle(target, settings, setStyle) {
 
     // Get buddies if non are defined
     if (buddies.length === 0) {
-      buddies = getBuddies(target, target);
+      buddies = getBuddies(target, settings);
     }
 
-    // @TODO: rebuild now our target is also a buddy?
-
     // Reset target (and buddies)
-    resetStyle(target, settings);
+    resetStyle(target, settings, setStyle);
     target.classList.toggle(settings.openClass);
 
     // Handle buddies
     if (buddies.length > 0) {
-      buddies.forEach(function (buddy, i) {
+      buddies.forEach(function(buddy, i) {
         if (target.classList.contains(settings.openClass)) {
-          buddy.classList.add(settings.openClass, 'openedby:' + target.getAttribute('data-touch-id'));
+          buddy.classList.add(settings.openClass, 'openedby:' + target.getAttribute(settings.id));
         } else {
-          buddy.classList.remove('openedby:' + target.getAttribute('data-touch-id'));
+          buddy.classList.remove('openedby:' + target.getAttribute(settings.id));
           let count = (buddy.className.match(/openedby:/g) || []).length;
           if (count === 0) {
             buddy.classList.remove(settings.openClass);
           }
         }
-        setStyling(buddy, buddiesValues[i], settings, 'toggle');
+        if (setStyle) {
+          setStyling(buddy, buddiesValues[i], settings, 'toggle');
+        }
       });
     }
 
-    // Get controller
-    const controller = document.querySelector('[data-touch-controls="' + target.getAttribute('data-touch-id') + '"]');
-    if (controller) {
-      setAria(controller, settings);
-    }
+    // Set aria for controller
+    document.querySelectorAll(target.getAttribute(settings.controllers)).forEach(function(control) {
+      setAria(control, settings);
+    });
 
     // Emit toggle event
-    emitEvent('bipToggle', settings);
+    emitEvent('bipToggle', settings, {
+      settings: settings
+    })
   }
 
 
   // Reset styling
   // =============
 
-  function resetStyle(target, settings) {
+  function resetStyle(target, settings, setStyle) {
     target.removeAttribute('style');
     if (buddies) {
       buddies.forEach(function (buddy, i) {
         buddy.removeAttribute('style');
-        setStyling(buddy, buddiesValues[i], settings, 'reset');
+        if (setStyle) {
+          setStyling(buddy, buddiesValues[i], settings, 'reset');
+        }
       });
     }
   }
@@ -672,23 +681,25 @@
   // =======================
 
   function handleGesture(event, target, moveDirection, settings) {
+
+    // Variables
     const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
     const threshold = targetValues.difference * settings.threshold;
 
     // Add the transitioning class
     target.classList.add(settings.transitioningClass);
 
-    // @TODO: add remaining duration time per prop (see multiplier value in buddiesValues)
+    // Either toggle or reset
     if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
-      toggle(target, settings);
+      toggle(target, settings, true);
     } else {
-      resetStyle(target, settings);
+      resetStyle(target, settings, true);
     }
 
     // Reset body styling
     document.body.removeAttribute('style');
 
-    // Remove touchmove class
+    // Remove touchmove class from target
     target.classList.remove(settings.touchmoveClass);
 
     // Remove the transitioning class
@@ -699,19 +710,29 @@
       }
     }
 
+    // Remove transitioning class when totalDuration is over as "backup"
+    setTimeout(function() {
+      target.classList.remove(settings.transitioningClass);
+      touchstart = false;
+    }, targetValues.totalDuration);
+
     // Emit dragged event
-    emitEvent('bipDragged', settings);
+    emitEvent('bipDragged', settings, {
+      settings: settings
+    })
   }
 
 
-  // Set aria attributes to the button
-  // =================================
+  // Set aria attributes to buttons
+  // ==============================
 
   function setAria(button, settings) {
-    if (button.classList.contains(settings.openClass)) {
-      button.setAttribute('aria-expanded', 'true');
-    } else {
-      button.setAttribute('aria-expanded', 'false');
+    if (button.tagName === 'BUTTON') {
+      if (button.classList.contains(settings.openClass)) {
+        button.setAttribute('aria-expanded', 'true');
+      } else {
+        button.setAttribute('aria-expanded', 'false');
+      }
     }
   }
 
@@ -724,6 +745,7 @@
 
     // Unique Variables
     const publicAPIs = {};
+    let selectors = [];
     let settings;
 
 
@@ -732,11 +754,25 @@
 
     function startHandler(event) {
 
-      // Return false if target is not a gesture zone
-      if (!event.target.closest(gestureZones)) return false;
+      // Targets
+      let isControl = false;
+      let isSelector = event.target.closest(selector) || false;
+
+      // See if element is a "close" target
+      selectors.forEach(function(el, i) {
+        if (event.target.closest(el.controls) && event.target.closest(el.controls).classList.contains('openedby:' + selector.replace(/\W/g, '') + i)) {
+          isControl = {
+            "controls": event.target.closest(el.controls),
+            "target": el.target
+          };
+        }
+      });
+
+      // Return false if applicable
+      if (!isControl && !isSelector) return false;
 
       // Return false if target or closest is an ignore target
-      ignore = !!event.target.closest('[data-touch-ignore]');
+      ignore = !!event.target.closest('[' + settings.ignore + ']');
       if (ignore) return false;
 
       // Reset values for new touchstart event
@@ -746,21 +782,18 @@
       touchstartX = event.screenX || event.changedTouches[0].screenX;
       touchstartY = event.screenY || event.changedTouches[0].screenY;
 
-      // Event target
-      const eventTarget = event.target.closest(gestureZones);
-
       // Set target
       // ==========
-      target = getTarget(eventTarget, settings);
-      if (!target) return false;
+      target = getTarget(isControl, isSelector, settings);
 
-      // Return false if target is already transitioning
+      // Return false if applicable
+      if (!target) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Get target values
       targetValues = getValues(target, settings);
 
-      // Get buddies (and values)
+      // Get buddies and values
       buddies.forEach(function (buddy) {
         buddiesValues.push(getTransitionValues(buddy, target, settings));
       });
@@ -773,7 +806,9 @@
       touchstart = true;
 
       // Emit event
-      emitEvent('bipDrag', settings);
+      emitEvent('bipDrag', settings, {
+        settings: settings
+      })
 
     }
 
@@ -790,15 +825,15 @@
       if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Variables
-      let touchmoveX = event.screenX || event.changedTouches[0].screenX;
-      let touchmoveY = event.screenY || event.changedTouches[0].screenY;
+      let touchmoveX = event.screenX || (event.changedTouches ? event.changedTouches[0].screenX : false);
+      let touchmoveY = event.screenY || (event.changedTouches ? event.changedTouches[0].screenY : false);
       let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.from) : false;
       let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.from) : false;
       let difference = (targetValues.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
       const isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.from, targetValues.to, true) : translatedY.between(targetValues.from, targetValues.to, true);
 
       // Set last difference
-      if ((getDifference(difference, lastDifference) > 10) || lastDifference === false) {
+      if ((getDifference(difference, lastDifference) > settings.difference) || lastDifference === false) {
         lastDifference = difference
       }
 
@@ -840,7 +875,7 @@
      */
 
     publicAPIs.toggle = function (target) {
-      toggle(target, settings);
+      toggle(target, settings, true);
     };
 
 
@@ -856,23 +891,33 @@
       // Merge options into defaults
       settings = extend(defaults, options || {});
 
-      // Set gesture zones
-      gestureZones = settings.selector + ',' + settings.controls + ',' + settings.closes;
+      // Grab all selectors
+      document.querySelectorAll(selector).forEach(function(el,i) {
+        el.setAttribute(settings.id, selector.replace(/\W/g, '') + i);
+        selectors[i] = {
+          "target": el,
+          "controls": el.getAttribute(settings.controllers)
+        };
 
-      // Set aria
-      document.querySelectorAll(settings.controls).forEach(function(control) {
-        setAria(control, settings);
+        // Set default aria for each controller
+        document.querySelectorAll(el.getAttribute(settings.controllers)).forEach(function(control) {
+          setAria(control, settings);
+        });
       });
+
 
       // Event listeners
       window.addEventListener('touchstart', startHandler, true);
       window.addEventListener('touchmove', moveHandler, true);
       window.addEventListener('touchend', endHandler, true);
       window.addEventListener('mousedown', startHandler, true);
-      if (settings.clickDrag) {
-        window.addEventListener('mousemove', moveHandler, true);
-      }
+      if (settings.clickDrag) { window.addEventListener('mousemove', moveHandler, true); }
       window.addEventListener('mouseup', endHandler, true);
+
+      // Emit event
+      emitEvent('bipInit', settings, {
+        settings: settings
+      })
 
     };
 

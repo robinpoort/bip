@@ -42,7 +42,7 @@
         height: 100%;
         background: rgba(0, 0, 0, 1);
         opacity: 0;
-        transition: opacity 500ms linear, transform 500ms linear;
+        transition: opacity 500ms linear, transform 500ms linear, width 500ms;
         transform: scale(.6);
         pointer-events: none;
         touch-action: none;
@@ -52,11 +52,11 @@
 
     .overlay.is-open {
         opacity: .6;
-        transform: scale(1.2, 2);
+        transform: scale(.5);
         cursor: pointer;
         pointer-events: initial;
         touch-action: initial;
-        /*width: 80%;*/
+        width: 80%;
     }
 
     .top,
@@ -290,12 +290,12 @@
 <body>
 
 <div class="wrapper">
-    <div class="overlay" data-touch-id="overlay" data-touch-closes="top,right,bottom,left"></div>
-    <div class="top" data-touch data-touch-id="top" data-touch-buddies="overlay,content,arrow1top,arrow2top">
-        <button type="button" data-touch-controls="top">
+    <div class="overlay"></div>
+    <div class="top" data-touch data-touch-controllers=".controlTop, .overlay" data-touch-buddies=".content, .arrow1top, .arrow2top">
+        <button class="controlTop" type="button">
             <span class="arrow">
-                <span class="arrow1" data-touch-id="arrow1top"></span>
-                <span class="arrow2" data-touch-id="arrow2top"></span>
+                <span class="arrow1 arrow1top"></span>
+                <span class="arrow2 arrow2top"></span>
             </span>
         </button>
         <h1>Top</h1>
@@ -303,12 +303,12 @@
         <p>Top details</p>
         <p>Top details</p>
     </div>
-    <div class="right" data-touch data-touch-id="right" data-touch-buddies="overlay,burger1left,burger2left,burger3left">
-        <button type="button" data-touch-controls="right">
+    <div class="right" data-touch data-touch-controllers=".controlRight, .overlay" data-touch-buddies=".burger1Right, .burger2Right, .burger3Right">
+        <button class="controlRight" type="button">
             <span class="hamburger">
-                <span class="burger1" data-touch-id="burger1left"></span>
-                <span class="burger2" data-touch-id="burger2left"></span>
-                <span class="burger3" data-touch-id="burger3left"></span>
+                <span class="burger1 burger1Right"></span>
+                <span class="burger2 burger2Right"></span>
+                <span class="burger3 burger3Right"></span>
             </span>
         </button>
         <h1>Right</h1>
@@ -316,11 +316,11 @@
         <p>Right details</p>
         <p>Right details</p>
     </div>
-    <div class="bottom" data-touch data-touch-id="bottom" data-touch-buddies="overlay,bottombutton,content,arrow1bottom,arrow2bottom">
-        <button type="button" data-touch-controls="bottom" data-touch-id="bottombutton">
+    <div class="bottom" data-touch data-touch-controllers=".controlBottom, .overlay" data-touch-buddies=".bottombutton, .content, .arrow1bottom, .arrow2bottom">
+        <button class="controlBottom" type="button">
             <span class="arrow">
-                <span class="arrow1" data-touch-id="arrow1bottom"></span>
-                <span class="arrow2" data-touch-id="arrow2bottom"></span>
+                <span class="arrow1 arrow1Bottom"></span>
+                <span class="arrow2 arrow2Bottom"></span>
             </span>
         </button>
         <h1>Bottom</h1>
@@ -328,12 +328,12 @@
         <p>Bottom details</p>
         <p>Bottom details</p>
     </div>
-    <div class="left" data-touch data-touch-id="left" data-touch-buddies="overlay,burger1right,burger2right,burger3right">
-        <button type="button" data-touch-controls="left">
+    <div class="left" data-touch data-touch-controllers=".controlLeft, .overlay" data-touch-buddies=".burger1Left, .burger2Left, .burger3Left">
+        <button class="controlLeft" type="button">
             <span class="hamburger">
-                <span class="burger1" data-touch-id="burger1right"></span>
-                <span class="burger2" data-touch-id="burger2right"></span>
-                <span class="burger3" data-touch-id="burger3right"></span>
+                <span class="burger1 burger1Left"></span>
+                <span class="burger2 burger2Left"></span>
+                <span class="burger3 burger3Left"></span>
             </span>
         </button>
         <h1>Left</h1>
@@ -341,7 +341,7 @@
         <p>Left details</p>
         <p>Left details</p>
     </div>
-    <div class="content" data-touch-id="content">
+    <div class="content">
         <h1>Center content</h1>
         <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Donec sed odio dui. Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Sed posuere consectetur est at lobortis.</p>
         <p>Cras mattis consectetur purus sit amet fermentum. Donec sed odio dui. Donec ullamcorper nulla non metus auctor fringilla. Curabitur blandit tempus porttitor. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
@@ -353,7 +353,19 @@
 
 <!-- initialize -->
 <script type="text/javascript">
-    const bip = new Bip('[data-touch]', {
+    // const bip = new Bip('[data-touch]', {
+    //     // cssValues: ['opacity', 'width']
+    // });
+
+    const bip2 = new Bip('.top', {
+        cssValues: ['opacity', 'width']
+    });
+
+    const bip3 = new Bip('.bottom', {
+        // cssValues: ['opacity', 'width']
+    });
+
+    const bip4 = new Bip('.right', {
         // cssValues: ['opacity', 'width']
     });
 
