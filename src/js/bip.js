@@ -698,19 +698,11 @@
     // Remove touchmove class from target
     target.classList.remove(settings.touchmoveClass);
 
-    // Remove the transitioning class
-    target.ontransitionend = function(event) {
-      if (event.target === target) {
-        target.classList.remove(settings.transitioningClass);
-        touchstart = false;
-      }
-    }
-
     // Remove transitioning class when totalDuration is over as "backup"
     setTimeout(function() {
       target.classList.remove(settings.transitioningClass);
       touchstart = false;
-    }, targetValues.totalDuration);
+    }, targetValues.totalDuration * targetValues.finalMultiplier);
 
     // Emit dragged event
     emitEvent('bipDragged', settings, {
@@ -820,7 +812,7 @@
     function moveHandler(event) {
 
       // Return false if applicable
-      // if (!touchstart) return false;
+      if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
@@ -861,7 +853,7 @@
       document.body.classList.remove('bip-busy');
 
       // Return false if applicable
-      // if (!touchstart) return false;
+      if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
