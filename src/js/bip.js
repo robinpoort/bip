@@ -702,7 +702,7 @@
     setTimeout(function() {
       target.classList.remove(settings.transitioningClass);
       touchstart = false;
-    }, targetValues.totalDuration * targetValues.finalMultiplier);
+    }, targetValues.totalDuration * (targetValues.finalMultiplier || 1));
 
     // Emit dragged event
     emitEvent('bipDragged', settings, {
