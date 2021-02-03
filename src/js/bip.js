@@ -454,8 +454,10 @@
     if (settings.yAxis.includes(settings.calculator)) {
       values.axis = 'y';
     }
-    if (settings.matrixValues.includes(settings.calculator)) {
-      values.axis = (parseInt(transitionValues[settings.calculator].from.x, 10) !== parseInt(transitionValues[settings.calculator].to.x, 10)) ? 'x' : 'y';
+    if (settings.calculator === 'translate') {
+      const xDiff = getDifference(transitionValues[settings.calculator].from.x, transitionValues[settings.calculator].to.x);
+      const yDiff = getDifference(transitionValues[settings.calculator].from.y, transitionValues[settings.calculator].to.y)
+      values.axis = xDiff > yDiff ? 'x' : 'y';
       values.from = values.axis === 'x' ? transitionValues[settings.calculator].from.x : transitionValues[settings.calculator].from.y
       values.to = values.axis === 'x' ? transitionValues[settings.calculator].to.x : transitionValues[settings.calculator].to.y
     }
@@ -648,7 +650,9 @@
 
     // Emit toggle event
     emitEvent('bipToggle', settings, {
-      settings: settings
+      settings: settings,
+      targetValues: targetValues,
+      buddiesValues: buddiesValues
     })
   }
 
@@ -710,7 +714,9 @@
 
     // Emit dragged event
     emitEvent('bipDragged', settings, {
-      settings: settings
+      settings: settings,
+      targetValues: targetValues,
+      buddiesValues: buddiesValues
     })
   }
 
@@ -798,12 +804,11 @@
       // Set touchstart to true
       touchstart = true;
 
-      console.log(targetValues);
-      console.log(buddiesValues);
-
       // Emit event
       emitEvent('bipDrag', settings, {
-        settings: settings
+        settings: settings,
+        targetValues: targetValues,
+        buddiesValues: buddiesValues
       })
 
     }
