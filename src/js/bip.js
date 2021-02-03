@@ -911,7 +911,7 @@
 
       // Make sure no text will be selected while dragging
       const style = document.createElement('style');
-      style.innerHTML = '.bip-busy * { pointer-events: none; }';
+      style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; }';
       const ref = document.querySelector('script');
       ref.parentNode.insertBefore(style, ref);
 
