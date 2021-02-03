@@ -820,7 +820,7 @@
     function moveHandler(event) {
 
       // Return false if applicable
-      if (!touchstart) return false;
+      // if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
@@ -861,7 +861,7 @@
       document.body.classList.remove('bip-busy');
 
       // Return false if applicable
-      if (!touchstart) return false;
+      // if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
