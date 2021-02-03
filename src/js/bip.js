@@ -37,6 +37,7 @@
 
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
+    yAxis: ['top', 'bottom', 'height', 'margin-top', 'margin-bottom', 'padding-top', 'padding-bottom'],
 
     clickDrag: true,
     emitEvents: true
@@ -304,7 +305,7 @@
   // Get calculations
   // ================
 
-  function getCalculations(from, to, difference, dimension) {
+  function getCalculations(from, to, dimension) {
     // Set values
     let values = {
       "from": from.value || '',
@@ -322,7 +323,6 @@
       values.ydir = (from.value.y < to.value.y) ? 'up' : 'down';
       values.ydifference = getDifference(from.value.y, to.value.y) || 0;
     }
-    else if (values.difference === 0 && values.ydifference === 0) return false;
     return values;
   }
 
@@ -330,7 +330,7 @@
   // Get transition values
   // =====================
 
-  function getTransitionValues(element, calculator, settings) {
+  function getTransitionValues(element, settings) {
 
     // Variables
     let fromValues = {};
@@ -340,18 +340,11 @@
     };
 
     // Get initial values
-    const calculateFrom = getMatrixValues(calculator, settings.calculator);
     settings.matrixValues.forEach(function(prop) { fromValues[prop] = (getMatrixValues(element, prop)) });
     settings.cssValues.forEach(function(prop) { fromValues[prop] = (getCSSValue(element, prop)) });
 
     // No transition styling
-    calculator.style.transition = 'none';
     element.style.transition = 'none';
-
-    // Get calculator value
-    calculator.classList.toggle(settings.openClass);
-    const calculateTo = getMatrixValues(calculator, "translate");
-    calculator.classList.toggle(settings.openClass);
 
     // Get target values
     element.classList.toggle(settings.openClass);
@@ -359,28 +352,16 @@
     settings.cssValues.forEach(function(prop) { toValues[prop] = (getCSSValue(element, prop)) });
     element.classList.toggle(settings.openClass);
 
-    // X or Y
-    const axis = (parseInt(calculateFrom.value.x, 10) !== parseInt(calculateTo.value.x, 10)) ? 'x' : 'y';
-    const from = (axis === 'x') ? calculateFrom.value.x : calculateFrom.value.y;
-    const to = (axis === 'x') ? calculateTo.value.x : calculateTo.value.y;
-    const difference = getDifference(from, to);
-
-    // Set element and axis for object
-    if (element === target) {
-      returnValues.axis = axis;
-      returnValues.difference = difference;
-    }
-
     // Add properties and values to the object
     settings.matrixValues.forEach(function(el) {
-        const elCalculations = getCalculations(fromValues[el], toValues[el], difference, 2);
+        const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
         if (elCalculations) {
           returnValues[el] = elCalculations
         }
     });
     settings.cssValues.forEach(function(el) {
       if (!isEquivalent(fromValues[el], toValues[el])) {
-        const elCalculations = getCalculations(fromValues[el], toValues[el], difference, 1)
+        const elCalculations = getCalculations(fromValues[el], toValues[el], 1)
         if (elCalculations) {
           returnValues[el] = elCalculations
         }
@@ -461,22 +442,43 @@
   }
 
 
+  // Get essentials
+  // ==============
+
+  function getEssentials(transitionValues, settings) {
+    let values = {
+      "axis": "x",
+      "from": transitionValues[settings.calculator].from,
+      "to": transitionValues[settings.calculator].to
+    };
+    if (settings.yAxis.includes(settings.calculator)) {
+      values.axis = 'y';
+    }
+    if (settings.matrixValues.includes(settings.calculator)) {
+      values.axis = (parseInt(transitionValues[settings.calculator].from.x, 10) !== parseInt(transitionValues[settings.calculator].to.x, 10)) ? 'x' : 'y';
+      values.from = values.axis === 'x' ? transitionValues[settings.calculator].from.x : transitionValues[settings.calculator].from.y
+      values.to = values.axis === 'x' ? transitionValues[settings.calculator].to.x : transitionValues[settings.calculator].to.y
+    }
+    return values
+  }
+
+
   // Get values
   // ==========
 
   function getValues(target, settings) {
-    const transitionValues = getTransitionValues(target, target, settings);
-    const from = parseInt(transitionValues.axis === 'x' ? transitionValues.translate.from.x : transitionValues.translate.from.y);
-    const to = parseInt(transitionValues.axis === 'x' ? transitionValues.translate.to.x : transitionValues.translate.to.y);
-
+    const transitionValues = getTransitionValues(target, settings);
+    const axis = getEssentials(transitionValues, settings).axis;
+    const from = getEssentials(transitionValues, settings).from;
+    const to = getEssentials(transitionValues, settings).to;
     return {
-      "axis": transitionValues.axis,
+      "axis": axis,
       "from": from,
       "to": to,
       "difference": getDifference(from, to),
-      "delay": transitionValues.translate.delay,
-      "duration": transitionValues.translate.duration,
-      "totalDuration": transitionValues.translate.delay + transitionValues.translate.duration
+      "delay": transitionValues[settings.calculator].delay,
+      "duration": transitionValues[settings.calculator].duration,
+      "totalDuration": transitionValues[settings.calculator].delay + transitionValues[settings.calculator].duration
     };
   }
 
@@ -785,7 +787,7 @@
 
       // Get buddies and values
       buddies.forEach(function (buddy) {
-        buddiesValues.push(getTransitionValues(buddy, target, settings));
+        buddiesValues.push(getTransitionValues(buddy, settings));
       });
 
       // Disable styling and disable user-select
