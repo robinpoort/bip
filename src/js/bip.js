@@ -271,16 +271,6 @@
   }
 
 
-  // Calculate difference
-  // ====================
-
-  function calculateDifference(from, to) {
-    let values = {};
-    values.difference = (getDifference(from, to)) || 0;
-    return values;
-  }
-
-
   // Is equivalent
   // =============
 
@@ -321,16 +311,16 @@
       "to": to.value || '',
       "unit": to.unit || '',
       "dir": (from.value < to.value) ? 'up' : 'down',
-      "difference": calculateDifference(from.value, to.value, difference).difference,
+      "difference": getDifference(from.value, to.value) || 0,
       "delay": to.delay !== 0 ? to.delay : from.delay,
       "duration": to.duration !== 0 ? to.duration : from.duration
     };
     if (dimension === 2 && to !== false) {
       values.unit = to.value.unit;
       values.dir = (from.value.x < to.value.x) ? 'up' : 'down';
-      values.difference = calculateDifference(from.value.x, to.value.x, difference).difference;
+      values.difference = getDifference(from.value.x, to.value.x) || 0;
       values.ydir = (from.value.y < to.value.y) ? 'up' : 'down';
-      values.ydifference = calculateDifference(from.value.y, to.value.y, difference).difference;
+      values.ydifference = getDifference(from.value.y, to.value.y) || 0;
     }
     else if (values.difference === 0 && values.ydifference === 0) return false;
     return values;
@@ -805,6 +795,9 @@
 
       // Set touchstart to true
       touchstart = true;
+
+      console.log(targetValues);
+      console.log(buddiesValues);
 
       // Emit event
       emitEvent('bipDrag', settings, {
