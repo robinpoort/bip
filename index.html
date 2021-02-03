@@ -19,6 +19,7 @@
         padding: 0;
         font-family: sans-serif;
         height: 100%;
+        background: #fff;
     }
 
     *, *::before, *::after {
@@ -26,10 +27,11 @@
     }
 
     .wrapper {
+        position: relative;
+        z-index: 0;
         background: #ecf0f1;
         width: 100%;
         height: 100%;
-        overflow: hidden;
     }
 
     /* Demo styling */
@@ -40,23 +42,23 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 1);
+        background: rgba(0, 0, 0, .6);
         opacity: 0;
-        transition: opacity 500ms linear, transform 500ms linear, width 500ms;
-        transform: scale(.6);
+        transition: opacity 300ms linear;
+        /*transform: scale(.6);*/
         pointer-events: none;
         touch-action: none;
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }
 
     .overlay.is-open {
-        opacity: .6;
-        transform: scale(.5);
+        opacity: 1;
+        /*transform: scale(.5);*/
         cursor: pointer;
         pointer-events: initial;
         touch-action: initial;
-        width: 80%;
+        /*width: 80%;*/
     }
 
     .top,
@@ -187,12 +189,13 @@
         transform: scale(1);
         height: 100vh;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
     }
 
     .content.is-open {
-        transform: scale(.5);
+        transform: scale(.8);
     }
 
     .hamburger {
@@ -353,29 +356,27 @@
 
 <!-- initialize -->
 <script type="text/javascript">
-    // const bip = new Bip('[data-touch]', {
+    const bip = new Bip('[data-touch]');
+
+    // const bip2 = new Bip('.top', {
+    //     cssValues: ['opacity', 'width']
+    // });
+    //
+    // const bip3 = new Bip('.bottom', {
     //     // cssValues: ['opacity', 'width']
     // });
-
-    const bip2 = new Bip('.top', {
-        cssValues: ['opacity', 'width']
-    });
-
-    const bip3 = new Bip('.bottom', {
-        // cssValues: ['opacity', 'width']
-    });
-
-    const bip4 = new Bip('.right', {
-        // cssValues: ['opacity', 'width']
-    });
+    //
+    // const bip4 = new Bip('.right', {
+    //     // cssValues: ['opacity', 'width']
+    // });
 
     // console.log(bip);
 
     // bip.toggle(document.querySelector('[data-touch-id="right"'));
 
-    // document.addEventListener('bipToggle', function () {
-    //   console.log('test toggle');
-    // }, false);
+    document.addEventListener('bipToggle', function (settings) {
+      console.log('test toggle', settings);
+    }, false);
     // document.addEventListener('bipDrag', function () {
     //   console.log('start drag');
     // }, false);
