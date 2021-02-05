@@ -485,6 +485,17 @@
   }
 
 
+  // Get closest
+  // ===========
+
+  function getClosest(from, to, translated) {
+    let closest = [from, to].reduce(function(prev, curr) {
+      return (Math.abs(curr - translated) < Math.abs(prev - translated) ? curr : prev);
+    });
+    return closest === from ? 'from' : 'to'
+  }
+
+
   // Calculate multiplier
   // ====================
 
@@ -616,9 +627,10 @@
   // Transitions following the touch
   // ===============================
 
-  function transitionWithGesture(element, translatedX, translatedY, touchmoveX, touchmoveY, settings) {
+  function transitionWithGesture(element, touchmoveX, touchmoveY, settings) {
     let movedX = Math.abs(touchmoveX - touchstartX);
     let movedY = Math.abs(touchmoveY - touchstartY);
+
 
     // Add movedX and movedY to targetValues
     targetValues.movedX = movedX;
@@ -840,8 +852,10 @@
       let touchmoveY = event.screenY || (event.changedTouches ? event.changedTouches[0].screenY : false);
       let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.from) : false;
       let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.from) : false;
+      let translated = (targetValues.axis === 'x') ? translatedX : translatedY;
       let difference = (targetValues.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
-      const isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.from, targetValues.to, true) : translatedY.between(targetValues.from, targetValues.to, true);
+      let closest = getClosest(targetValues.from, targetValues.to, translated);
+      let isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.from, targetValues.to, true) : translatedY.between(targetValues.from, targetValues.to, true);
 
       // Set last difference
       if ((getDifference(difference, lastDifference) > settings.difference) || lastDifference === false) {
@@ -856,9 +870,11 @@
       }
 
       // Transition
-      if (isBetween) {
-        transitionWithGesture(target, translatedX, translatedY, touchmoveX, touchmoveY, settings);
+      if (!isBetween && closest === 'from') {
+        targetValues.axis === 'x' ? touchmoveX = touchstartX : touchmoveY = touchstartY;
       }
+
+      transitionWithGesture(target, touchmoveX, touchmoveY, settings);
     }
 
 
