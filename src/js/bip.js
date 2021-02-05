@@ -568,7 +568,7 @@
       transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay') + 'ms');
       transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration') + 'ms');
       if (element === target && settings.calculator === 'translate') {
-        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration');
+        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration') || targetValues.totalDuration;
       }
     }
 
@@ -592,7 +592,7 @@
             transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay') + 'ms');
             transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration') + 'ms');
             if (element === target && settings.calculator === prop) {
-              targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration');
+              targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration') || targetValues.totalDuration;
             }
           }
         }
@@ -926,12 +926,15 @@
       ref.parentNode.insertBefore(style, ref);
 
       // Event listeners
-      window.addEventListener('touchstart', startHandler, true);
-      window.addEventListener('touchmove', moveHandler, true);
-      window.addEventListener('touchend', endHandler, true);
-      window.addEventListener('mousedown', startHandler, true);
-      if (settings.clickDrag) { window.addEventListener('mousemove', moveHandler, true); }
-      window.addEventListener('mouseup', endHandler, true);
+      if ('ontouchstart' in document.documentElement) {
+        document.addEventListener('touchstart', startHandler, true);
+        document.addEventListener('touchmove', moveHandler, true);
+        document.addEventListener('touchend', endHandler, true);
+      } else {
+        document.addEventListener('mousedown', startHandler, true);
+        if (settings.clickDrag) { document.addEventListener('mousemove', moveHandler, true); }
+        document.addEventListener('mouseup', endHandler, true);
+      }
 
       // Emit event
       emitEvent('bipInit', settings, {
