@@ -714,13 +714,8 @@
       resetStyle(target, settings, true);
     }
 
-    // Reset body styling
-    document.body.removeAttribute('style');
-
     // Remove touchmove class from target
     target.classList.remove(settings.touchmoveClass);
-
-    console.log(targetValues);
 
     // Remove transitioning class when totalDuration is over
     setTimeout(function() {
@@ -813,7 +808,6 @@
       });
 
       // Disable styling and disable user-select
-      document.body.style.overflow = 'hidden';
       document.body.classList.add('bip-busy');
       target.classList.add(settings.touchmoveClass);
 
