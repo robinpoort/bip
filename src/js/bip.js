@@ -510,14 +510,29 @@
   }
 
 
+  // Get remaining delay or duration
+  // ===============================
+
+  function getRemaining(multiplierRoot, properties, type) {
+    let value = 0;
+    if (type === 'delay') {
+      value = Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay))
+    }
+    if (type === 'duration') {
+      value = Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration))
+    }
+    return value;
+  }
+
+
   // Set styling
   // ===========
 
   function setStyling(element, buddyValues, settings, properties) {
     let transforms = [];
     let transitionProperties = [];
-    let transitionDurations = [];
     let transitionDelays = [];
+    let transitionDurations = [];
     let multiplierRoot = [];
     let multiplier = 1;
 
@@ -540,6 +555,7 @@
       }
     });
 
+
     // Set transforms
     if (properties === 'all') {
       transforms = transforms.join(' ');
@@ -549,8 +565,11 @@
     // Set transition properties
     else {
       transitionProperties.push("transform");
-      transitionDurations.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration)) + 'ms');
-      transitionDelays.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay)) + 'ms');
+      transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay') + 'ms');
+      transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration') + 'ms');
+      if (element === target && settings.calculator === 'translate') {
+        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration');
+      }
     }
 
     // Loop through CSS values
@@ -570,8 +589,11 @@
             }
           } else {
             transitionProperties.push(prop);
-            transitionDurations.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration)) + 'ms');
-            transitionDelays.push(Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay)) + 'ms');
+            transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay') + 'ms');
+            transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration') + 'ms');
+            if (element === target && settings.calculator === prop) {
+              targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration');
+            }
           }
         }
       }
@@ -580,8 +602,8 @@
     // Set transition properties
     if (properties !== 'all') {
       element.style.transitionProperty = transitionProperties;
-      element.style.transitionDuration = transitionDurations;
       element.style.transitionDelay = transitionDelays;
+      element.style.transitionDuration = transitionDurations;
       element.ontransitionend = function(event) {
         if (event.target === element) {
           element.removeAttribute('style');
@@ -698,11 +720,13 @@
     // Remove touchmove class from target
     target.classList.remove(settings.touchmoveClass);
 
-    // Remove transitioning class when totalDuration is over as "backup"
+    console.log(targetValues);
+
+    // Remove transitioning class when totalDuration is over
     setTimeout(function() {
       target.classList.remove(settings.transitioningClass);
       touchstart = false;
-    }, targetValues.totalDuration * (targetValues.finalMultiplier || 1));
+    }, targetValues.finalDuration * 0.95); // Shorten it a bit because of ease-out it may look like it's done already
 
     // Emit dragged event
     emitEvent('bipDragged', settings, {
