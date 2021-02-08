@@ -31,6 +31,8 @@
 
     threshold: 0.2,
     difference: 10,
+    maxEndDuration: 500,
+    removeClassValue: .9,
     openClass: 'is-open',
     transitioningClass: 'is-transitioning',
     touchmoveClass: 'is-touchmove',
@@ -43,17 +45,17 @@
     emitEvents: true
   };
 
+  let touchevent = false;
   let touchstart = false;
   let touchstartX = 0;
   let touchstartY = 0;
   let touchendX = 0;
   let touchendY = 0;
-  let lastDifference = false;
+  let lastDifference = 0;
   let moveDirection = 'forward';
   let target = false;
   let targetValues = [];
   let buddies = [];
-  let buddiesValues = [];
   let ignore = false;
 
 
@@ -63,11 +65,9 @@
   function resetValues() {
     touchstart = false;
     lastDifference = false;
-    moveDirection = 'forward';
     target = false;
     targetValues = [];
     buddies = [];
-    buddiesValues = [];
   }
 
 
@@ -308,13 +308,13 @@
   function getCalculations(from, to, dimension) {
     // Set values
     let values = {
-      "from": from.value || '',
-      "to": to.value || '',
-      "unit": to.unit || '',
-      "dir": (from.value < to.value) ? 'up' : 'down',
-      "difference": getDifference(from.value, to.value) || 0,
-      "delay": to.delay !== 0 ? to.delay : from.delay,
-      "duration": to.duration !== 0 ? to.duration : from.duration
+      'from': from.value || '',
+      'to': to.value || '',
+      'unit': to.unit || '',
+      'dir': (from.value < to.value) ? 'up' : 'down',
+      'difference': getDifference(from.value, to.value) || 0,
+      'delay': to.delay !== 0 ? to.delay : from.delay,
+      'duration': to.duration !== 0 ? to.duration : from.duration
     };
     if (dimension === 2 && to !== false) {
       values.unit = to.value.unit;
@@ -330,18 +330,24 @@
   // Get transition values
   // =====================
 
-  function getTransitionValues(element, settings) {
+  function getTransitionValues(element, settings, type) {
 
     // Variables
     let fromValues = {};
     let toValues = {};
     let returnValues = {
-      "element": element
+      'element': element
     };
 
     // Get initial values
     settings.matrixValues.forEach(function(prop) { fromValues[prop] = (getMatrixValues(element, prop)) });
     settings.cssValues.forEach(function(prop) { fromValues[prop] = (getCSSValue(element, prop)) });
+    if (type === 'getValues') {
+      emitEvent('bipCalculateFromValues', settings, {
+        settings: settings,
+        target: target
+      })
+    }
 
     // No transition styling
     element.style.transition = 'none';
@@ -350,13 +356,21 @@
     element.classList.toggle(settings.openClass);
     settings.matrixValues.forEach(function(prop) { toValues[prop] = (getMatrixValues(element, prop)) });
     settings.cssValues.forEach(function(prop) { toValues[prop] = (getCSSValue(element, prop)) });
+    if (type === 'getValues') {
+      emitEvent('bipCalculateToValues', settings, {
+        settings: settings,
+        target: target
+      })
+    }
     element.classList.toggle(settings.openClass);
 
     // Add properties and values to the object
     settings.matrixValues.forEach(function(el) {
-      const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
-      if (elCalculations) {
-        returnValues[el] = elCalculations
+      if (!isEquivalent(fromValues[el], toValues[el])) {
+        const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
+        if (elCalculations) {
+          returnValues[el] = elCalculations
+        }
       }
     });
     settings.cssValues.forEach(function(el) {
@@ -447,9 +461,9 @@
 
   function getEssentials(transitionValues, settings) {
     let values = {
-      "axis": "x",
-      "from": transitionValues[settings.calculator].from,
-      "to": transitionValues[settings.calculator].to
+      'axis': 'x',
+      'from': transitionValues[settings.calculator].from,
+      'to': transitionValues[settings.calculator].to
     };
     if (settings.yAxis.includes(settings.calculator)) {
       values.axis = 'y';
@@ -469,18 +483,18 @@
   // ==========
 
   function getValues(target, settings) {
-    const transitionValues = getTransitionValues(target, settings);
+    const transitionValues = getTransitionValues(target, settings, 'getValues');
     const axis = getEssentials(transitionValues, settings).axis;
     const from = getEssentials(transitionValues, settings).from;
     const to = getEssentials(transitionValues, settings).to;
     return {
-      "axis": axis,
-      "from": from,
-      "to": to,
-      "difference": getDifference(from, to),
-      "delay": transitionValues[settings.calculator].delay,
-      "duration": transitionValues[settings.calculator].duration,
-      "totalDuration": transitionValues[settings.calculator].delay + transitionValues[settings.calculator].duration
+      'axis': axis,
+      'from': from,
+      'to': to,
+      'difference': getDifference(from, to),
+      'delay': transitionValues[settings.calculator].delay,
+      'duration': transitionValues[settings.calculator].duration,
+      'totalDuration': transitionValues[settings.calculator].delay + transitionValues[settings.calculator].duration
     };
   }
 
@@ -509,14 +523,14 @@
     let x = (factor-delayFactor)*((totalDuration/(duration*durationFactor))*durationFactor);
     let xRound = Math.max(0, Math.min(1, x));
     return {
-      "value": x,
-      "x": xRound,
-      "delay": delay,
-      "duration": duration,
-      "toggleDuration": totalDuration * (1 - xRound),
-      "toggleDelay": (((totalDuration - delay) / totalDuration) * x) * -1000,
-      "resetDuration": totalDuration - (totalDuration * (1 - xRound)),
-      "resetDelay": -Math.abs(delay) * x,
+      'value': x,
+      'x': xRound,
+      'delay': delay,
+      'duration': duration,
+      'toggleDuration': totalDuration * (1 - xRound),
+      'toggleDelay': (((totalDuration - delay) / totalDuration) * x) * -1000,
+      'resetDuration': totalDuration - (totalDuration * (1 - xRound)),
+      'resetDelay': -Math.abs(delay) * x,
     };
   }
 
@@ -524,13 +538,16 @@
   // Get remaining delay or duration
   // ===============================
 
-  function getRemaining(multiplierRoot, properties, type) {
+  function getRemaining(multiplierRoot, properties, type, settings) {
     let value = 0;
     if (type === 'delay') {
-      value = Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay))
+      value = Math.max(0, Math.min(properties !== 'all' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay))
     }
     if (type === 'duration') {
-      value = Math.max(0, Math.min(properties === 'toggle' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration))
+      value = Math.max(0, Math.min(properties !== 'all' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration))
+    }
+    if (type === 'duration' && settings.maxEndDuration && settings.maxEndDuration < targetValues.totalDuration) {
+      value = value * (settings.maxEndDuration / targetValues.totalDuration);
     }
     return value;
   }
@@ -539,7 +556,7 @@
   // Set styling
   // ===========
 
-  function setStyling(element, buddyValues, settings, properties) {
+  function setStyling(element, values, settings, properties) {
     let transforms = [];
     let transitionProperties = [];
     let transitionDelays = [];
@@ -549,17 +566,17 @@
 
     // Loop through matrix values
     settings.matrixValues.forEach(function(prop) {
-      if (buddyValues[prop] !== undefined) {
-        multiplierRoot = calculateMultiplier(buddyValues[prop]);
+      if (values[prop] !== undefined) {
+        multiplierRoot = calculateMultiplier(values[prop]);
         multiplier = multiplierRoot.x;
         if (multiplier) {
-          let x = (parseFloat(buddyValues[prop].from.x) < parseFloat(buddyValues[prop].to.x)) ? parseFloat(buddyValues[prop].from.x) + (buddyValues[prop].difference * multiplier) : parseFloat(buddyValues[prop].from.x) - (buddyValues[prop].difference * multiplier);
-          let y = (parseFloat(buddyValues[prop].from.y) < parseFloat(buddyValues[prop].to.y)) ? parseFloat(buddyValues[prop].from.y) + (buddyValues[prop].ydifference * multiplier) : parseFloat(buddyValues[prop].from.y) - (buddyValues[prop].ydifference * multiplier) || false;
-          buddyValues[prop].multiplier = multiplier;
-          buddyValues[prop].value = multiplierRoot.value
-          transforms.push(prop + '(' + x + buddyValues[prop].unit + (y ? ',' + y + buddyValues[prop].unit + ')' : ')'));
+          let x = (parseFloat(values[prop].from.x) < parseFloat(values[prop].to.x)) ? parseFloat(values[prop].from.x) + (values[prop].difference * multiplier) : parseFloat(values[prop].from.x) - (values[prop].difference * multiplier);
+          let y = (parseFloat(values[prop].from.y) < parseFloat(values[prop].to.y)) ? parseFloat(values[prop].from.y) + (values[prop].ydifference * multiplier) : parseFloat(values[prop].from.y) - (values[prop].ydifference * multiplier);
+          values[prop].multiplier = multiplier;
+          values[prop].value = multiplierRoot.value
+          transforms.push(prop + '(' + x + values[prop].unit + (y ? ',' + y + values[prop].unit + ')' : ')'));
           if (element === target && prop === settings.calculator) {
-            targetValues.finalMove = {"x": x, "y": y};
+            targetValues.finalMove = {'x': x, 'y': y};
             targetValues.finalMultiplier = multiplier;
           }
         }
@@ -575,23 +592,26 @@
 
     // Set transition properties
     else {
-      transitionProperties.push("transform");
-      transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay') + 'ms');
-      transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration') + 'ms');
+      transitionProperties.push('transform');
+      transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
+      transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
       if (element === target && settings.calculator === 'translate') {
-        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration') || targetValues.totalDuration;
+        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', settings);
+        if (isNaN(targetValues.finalDuration)) {
+          targetValues.finalDuration = targetValues.totalDuration
+        }
       }
     }
 
     // Loop through CSS values
     settings.cssValues.forEach(function(prop) {
       if (prop !== undefined) {
-        let buddyValue = buddyValues[prop];
+        let buddyValue = values[prop];
         if (buddyValue !== undefined) {
           multiplierRoot = calculateMultiplier(buddyValue);
           multiplier = multiplierRoot.x;
           buddyValue.multiplier = multiplier;
-          buddyValue.vaue = multiplierRoot.value;
+          buddyValue.value = multiplierRoot.value;
           if (properties === 'all') {
             if (buddyValue.from < buddyValue.to) {
               element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
@@ -600,15 +620,19 @@
             }
           } else {
             transitionProperties.push(prop);
-            transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay') + 'ms');
-            transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration') + 'ms');
+            transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
+            transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
             if (element === target && settings.calculator === prop) {
-              targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration') || targetValues.totalDuration;
+              targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', settings);
+              if (isNaN(targetValues.finalDuration)) {
+                targetValues.finalDuration = targetValues.totalDuration
+              }
             }
           }
         }
       }
     });
+
 
     // Set transition properties
     if (properties !== 'all') {
@@ -616,9 +640,7 @@
       element.style.transitionDelay = transitionDelays;
       element.style.transitionDuration = transitionDurations;
       element.ontransitionend = function(event) {
-        if (event.target === element) {
-          element.removeAttribute('style');
-        }
+        element.removeAttribute('style');
       }
     }
   }
@@ -628,18 +650,20 @@
   // ===============================
 
   function transitionWithGesture(element, touchmoveX, touchmoveY, settings) {
+
+    // Calculate movedX and movedY
     let movedX = Math.abs(touchmoveX - touchstartX);
     let movedY = Math.abs(touchmoveY - touchstartY);
-
 
     // Add movedX and movedY to targetValues
     targetValues.movedX = movedX;
     targetValues.movedY = movedY;
 
-    buddies.forEach(function (buddy, i) {
-      let count = (buddy.className.match(/openedby:/g) || []).length;
-      if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute(settings.id)))) {
-        setStyling(buddy, buddiesValues[i], settings, 'all');
+    // Handle buddies
+    buddies.forEach(function (buddy) {
+      let count = (buddy.element.className.match(/openedby:/g) || []).length;
+      if (count === 0 || (count === 1 && buddy.element.classList.contains('openedby:' + element.getAttribute(settings.id)))) {
+        setStyling(buddy.element, buddy, settings, 'all');
       }
     });
   }
@@ -655,24 +679,29 @@
       buddies = getBuddies(target, settings);
     }
 
+    // Emit toggle event
+    emitEvent('bipToggle', settings, {
+      settings: settings,
+      target: target,
+      targetValues: targetValues,
+      buddies: buddies
+    })
+
     // Reset target (and buddies)
     resetStyle(target, settings, setStyle);
     target.classList.toggle(settings.openClass);
 
     // Handle buddies
     if (buddies.length > 0) {
-      buddies.forEach(function(buddy, i) {
+      buddies.forEach(function(buddy) {
         if (target.classList.contains(settings.openClass)) {
-          buddy.classList.add(settings.openClass, 'openedby:' + target.getAttribute(settings.id));
+          buddy.element.classList.add(settings.openClass, 'openedby:' + target.getAttribute(settings.id));
         } else {
-          buddy.classList.remove('openedby:' + target.getAttribute(settings.id));
-          let count = (buddy.className.match(/openedby:/g) || []).length;
+          buddy.element.classList.remove('openedby:' + target.getAttribute(settings.id));
+          let count = (buddy.element.className.match(/openedby:/g) || []).length;
           if (count === 0) {
-            buddy.classList.remove(settings.openClass);
+            buddy.element.classList.remove(settings.openClass);
           }
-        }
-        if (setStyle) {
-          setStyling(buddy, buddiesValues[i], settings, 'toggle');
         }
       });
     }
@@ -681,13 +710,6 @@
     document.querySelectorAll(target.getAttribute(settings.controllers)).forEach(function(control) {
       setAria(control, settings);
     });
-
-    // Emit toggle event
-    emitEvent('bipToggle', settings, {
-      settings: settings,
-      targetValues: targetValues,
-      buddiesValues: buddiesValues
-    })
   }
 
 
@@ -697,10 +719,10 @@
   function resetStyle(target, settings, setStyle) {
     target.removeAttribute('style');
     if (buddies) {
-      buddies.forEach(function (buddy, i) {
-        buddy.removeAttribute('style');
+      buddies.forEach(function (buddy) {
+        buddy.element.removeAttribute('style');
         if (setStyle) {
-          setStyling(buddy, buddiesValues[i], settings, 'reset');
+          setStyling(buddy.element, buddy, settings, 'reset');
         }
       });
     }
@@ -732,14 +754,18 @@
     // Remove transitioning class when totalDuration is over
     setTimeout(function() {
       target.classList.remove(settings.transitioningClass);
+      touchevent = false;
       touchstart = false;
-    }, targetValues.finalDuration * .8); // Shorten it a bit because of ease-out it may look like it's done already
+    }, targetValues.finalDuration * settings.removeClassValue);
+
+    console.log(targetValues.finalDuration);
 
     // Emit dragged event
     emitEvent('bipDragged', settings, {
       settings: settings,
+      target: target,
       targetValues: targetValues,
-      buddiesValues: buddiesValues
+      buddies: buddies
     })
   }
 
@@ -783,18 +809,24 @@
       selectors.forEach(function(el, i) {
         if (event.target.closest(el.controls) && event.target.closest(el.controls).classList.contains('openedby:' + selector.replace(/\W/g, '') + i)) {
           isControl = {
-            "controls": event.target.closest(el.controls),
-            "target": el.target
+            'controls': event.target.closest(el.controls),
+            'target': el.target
           };
         }
       });
 
       // Return false if applicable
       if (!isControl && !isSelector) return false;
+      if (touchevent) return false;
 
       // Return false if target or closest is an ignore target
       ignore = !!event.target.closest('[' + settings.ignore + ']');
       if (ignore) return false;
+
+      // Recognize touchevent
+      if (event.type === 'touchstart') {
+        touchevent = true;
+      }
 
       // Reset values for new touchstart event
       resetValues();
@@ -814,9 +846,17 @@
       // Get target values
       targetValues = getValues(target, settings);
 
+      // Emit event
+      emitEvent('bipDrag', settings, {
+        settings: settings,
+        target: target,
+        targetValues: targetValues,
+        buddies: buddies
+      })
+
       // Get buddies and values
-      buddies.forEach(function (buddy) {
-        buddiesValues.push(getTransitionValues(buddy, settings));
+      buddies.forEach(function (buddy, i) {
+        buddies[i] = (getTransitionValues(buddy, settings, 'buddyValues'));
       });
 
       // Disable styling and disable user-select
@@ -825,13 +865,6 @@
 
       // Set touchstart to true
       touchstart = true;
-
-      // Emit event
-      emitEvent('bipDrag', settings, {
-        settings: settings,
-        targetValues: targetValues,
-        buddiesValues: buddiesValues
-      })
 
     }
 
@@ -928,8 +961,8 @@
       document.querySelectorAll(selector).forEach(function(el,i) {
         el.setAttribute(settings.id, selector.replace(/\W/g, '') + i);
         selectors[i] = {
-          "target": el,
-          "controls": el.getAttribute(settings.controllers)
+          'target': el,
+          'controls': el.getAttribute(settings.controllers)
         };
 
         // Set default aria for each controller
@@ -940,20 +973,17 @@
 
       // Make sure no text will be selected while dragging
       const style = document.createElement('style');
-      style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; }';
       const ref = document.querySelector('script');
+      style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; }';
       ref.parentNode.insertBefore(style, ref);
 
       // Event listeners
-      if ('ontouchstart' in document.documentElement) {
-        document.addEventListener('touchstart', startHandler, true);
-        document.addEventListener('touchmove', moveHandler, true);
-        document.addEventListener('touchend', endHandler, true);
-      } else {
-        document.addEventListener('mousedown', startHandler, true);
-        if (settings.clickDrag) { document.addEventListener('mousemove', moveHandler, true); }
-        document.addEventListener('mouseup', endHandler, true);
-      }
+      document.addEventListener('touchstart', startHandler, true);
+      document.addEventListener('touchmove', moveHandler, true);
+      document.addEventListener('touchend', endHandler, true);
+      document.addEventListener('mousedown', startHandler, true);
+      if (settings.clickDrag) { document.addEventListener('mousemove', moveHandler, true); }
+      document.addEventListener('mouseup', endHandler, true);
 
       // Emit event
       emitEvent('bipInit', settings, {
