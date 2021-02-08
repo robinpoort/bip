@@ -374,15 +374,27 @@
 
     // bip.toggle(document.querySelector('[data-touch-id="right"'));
 
-    // document.addEventListener('bipToggle', function (settings) {
-    //   console.log('test toggle', settings);
-    // }, false);
-    // document.addEventListener('bipDrag', function () {
-    //   console.log('start drag');
-    // }, false);
-    // document.addEventListener('bipDragged', function () {
-    //   console.log('drag stopped');
-    // }, false);
+    document.addEventListener('bipCalculateFrom', function (e) {
+      console.log('Calculate from', e.detail);
+    }, false);
+    document.addEventListener('bipCalculateTo', function (e) {
+      console.log('Calculate to', e.detail);
+    }, false);
+    document.addEventListener('bipEndDrag', function (e) {
+        console.log('End drag', e.detail);
+    }, false);
+    document.addEventListener('bipEnd', function (e) {
+        console.log('End', e.detail);
+    }, false);
+    document.addEventListener('bipStartDrag', function (e) {
+        console.log('Start drag', e.detail);
+    }, false);
+    document.addEventListener('bipMove', function (e) {
+        console.log('Move', e.detail);
+    }, false);
+    document.addEventListener('bipInit', function (e) {
+        console.log('Init', e.detail);
+    }, false);
 
 </script>
 </body>
