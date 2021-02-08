@@ -733,7 +733,7 @@
     setTimeout(function() {
       target.classList.remove(settings.transitioningClass);
       touchstart = false;
-    }, targetValues.finalDuration * 0.95); // Shorten it a bit because of ease-out it may look like it's done already
+    }, targetValues.finalDuration * .8); // Shorten it a bit because of ease-out it may look like it's done already
 
     // Emit dragged event
     emitEvent('bipDragged', settings, {
@@ -872,6 +872,9 @@
       // Transition
       if (!isBetween && closest === 'from') {
         targetValues.axis === 'x' ? touchmoveX = touchstartX : touchmoveY = touchstartY;
+        moveDirection = 'backward';
+      } else {
+        moveDirection = 'forward';
       }
 
       transitionWithGesture(target, touchmoveX, touchmoveY, settings);
