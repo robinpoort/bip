@@ -354,10 +354,10 @@
 
     // Add properties and values to the object
     settings.matrixValues.forEach(function(el) {
-        const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
-        if (elCalculations) {
-          returnValues[el] = elCalculations
-        }
+      const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
+      if (elCalculations) {
+        returnValues[el] = elCalculations
+      }
     });
     settings.cssValues.forEach(function(el) {
       if (!isEquivalent(fromValues[el], toValues[el])) {
