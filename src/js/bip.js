@@ -32,7 +32,6 @@
     threshold: 0.2,
     difference: 10,
     maxEndDuration: 500,
-    removeClassValue: .9,
     openClass: 'is-open',
     transitioningClass: 'is-transitioning',
     touchmoveClass: 'is-touchmove',
@@ -773,7 +772,7 @@
         targetValues: targetValues,
         buddies: buddies
       });
-    }, targetValues.finalDuration * settings.removeClassValue);
+    }, targetValues.finalDuration);
   }
 
 

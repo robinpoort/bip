@@ -84,7 +84,6 @@
     }
 
     .bottom.is-open {
-        /*transition-delay: 300ms;*/
         transform: translateY(1rem) scale(.9);
         z-index: 3;
     }
@@ -359,13 +358,14 @@
     const bip = new Bip('[data-touch]');
 
     // const bip2 = new Bip('.top', {
-    //     cssValues: ['opacity', 'width']
+    //     cssValues: ['opacity', 'height'],
+    //     calculator: 'height'
     // });
-    //
+
     // const bip3 = new Bip('.bottom', {
     //     // cssValues: ['opacity', 'width']
     // });
-    //
+
     // const bip4 = new Bip('.right', {
     //     // cssValues: ['opacity', 'width']
     // });
@@ -374,27 +374,40 @@
 
     // bip.toggle(document.querySelector('[data-touch-id="right"'));
 
-    document.addEventListener('bipCalculateFrom', function (e) {
-      console.log('Calculate from', e.detail);
-    }, false);
-    document.addEventListener('bipCalculateTo', function (e) {
-      console.log('Calculate to', e.detail);
-    }, false);
-    document.addEventListener('bipEndDrag', function (e) {
-        console.log('End drag', e.detail);
-    }, false);
-    document.addEventListener('bipEnd', function (e) {
-        console.log('End', e.detail);
-    }, false);
-    document.addEventListener('bipStartDrag', function (e) {
-        console.log('Start drag', e.detail);
-    }, false);
-    document.addEventListener('bipMove', function (e) {
-        console.log('Move', e.detail);
-    }, false);
-    document.addEventListener('bipInit', function (e) {
-        console.log('Init', e.detail);
-    }, false);
+    // function checkSetHeight(e) {
+    //     e.target.classList.add('heightCheck');
+    //     var style = document.createElement('style');
+    //     var ref = document.querySelector('script');
+    //     var value = e.target.classList.contains('is-open') ? e.fromValues.height.value : e.toValues.height.value;
+    //     style.innerHTML = '.heightCheck { height: ' + value + 'px; }';
+    //     style.id = 'addClass';
+    //     ref.parentNode.insertBefore(style, ref);
+    // }
+    //
+    // document.addEventListener('bipCalculateFrom', function (e) {
+    //   console.log('Calculate from', e.detail);
+    // }, false);
+    // document.addEventListener('bipCalculateTo', function (e) {
+    //     console.log(e.detail);
+    //   checkSetHeight(e.detail);
+    // }, false);
+    // document.addEventListener('bipEndDrag', function (e) {
+    //     console.log('End drag', e.detail);
+    // }, false);
+    // document.addEventListener('bipEnd', function (e) {
+    //     console.log('End', e.detail);
+    //     var el = document.getElementById('addClass');
+    //     el.parentNode.removeChild(el);
+    // }, false);
+    // document.addEventListener('bipStartDrag', function (e) {
+    //     console.log('Start drag', e.detail);
+    // }, false);
+    // document.addEventListener('bipMove', function (e) {
+    //     console.log('Move', e.detail);
+    // }, false);
+    // document.addEventListener('bipInit', function (e) {
+    //     console.log('Init', e.detail);
+    // }, false);
 
 </script>
 </body>
