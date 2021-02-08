@@ -32,7 +32,6 @@
     threshold: 0.2,
     difference: 10,
     maxEndDuration: 500,
-    removeClassValue: .9,
     openClass: 'is-open',
     transitioningClass: 'is-transitioning',
     touchmoveClass: 'is-touchmove',
@@ -342,11 +341,14 @@
     // Get initial values
     settings.matrixValues.forEach(function(prop) { fromValues[prop] = (getMatrixValues(element, prop)) });
     settings.cssValues.forEach(function(prop) { fromValues[prop] = (getCSSValue(element, prop)) });
+
+    // Emit event
     if (type === 'getValues') {
-      emitEvent('bipCalculateFromValues', settings, {
+      emitEvent('bipCalculateFrom', settings, {
         settings: settings,
-        target: target
-      })
+        target: target,
+        fromValues: fromValues
+      });
     }
 
     // No transition styling
@@ -356,12 +358,18 @@
     element.classList.toggle(settings.openClass);
     settings.matrixValues.forEach(function(prop) { toValues[prop] = (getMatrixValues(element, prop)) });
     settings.cssValues.forEach(function(prop) { toValues[prop] = (getCSSValue(element, prop)) });
+
+    // Emit event
     if (type === 'getValues') {
-      emitEvent('bipCalculateToValues', settings, {
+      emitEvent('bipCalculateTo', settings, {
         settings: settings,
-        target: target
-      })
+        target: target,
+        fromValues: fromValues,
+        toValues: toValues
+      });
     }
+
+    // Toggle class back
     element.classList.toggle(settings.openClass);
 
     // Add properties and values to the object
@@ -679,14 +687,6 @@
       buddies = getBuddies(target, settings);
     }
 
-    // Emit toggle event
-    emitEvent('bipToggle', settings, {
-      settings: settings,
-      target: target,
-      targetValues: targetValues,
-      buddies: buddies
-    })
-
     // Reset target (and buddies)
     resetStyle(target, settings, setStyle);
     target.classList.toggle(settings.openClass);
@@ -751,22 +751,28 @@
     // Remove touchmove class from target
     target.classList.remove(settings.touchmoveClass);
 
+    // Emit event
+    emitEvent('bipEndDrag', settings, {
+      settings: settings,
+      target: target,
+      targetValues: targetValues,
+      buddies: buddies
+    });
+
     // Remove transitioning class when totalDuration is over
     setTimeout(function() {
       target.classList.remove(settings.transitioningClass);
       touchevent = false;
       touchstart = false;
-    }, targetValues.finalDuration * settings.removeClassValue);
 
-    console.log(targetValues.finalDuration);
-
-    // Emit dragged event
-    emitEvent('bipDragged', settings, {
-      settings: settings,
-      target: target,
-      targetValues: targetValues,
-      buddies: buddies
-    })
+      // Emit event
+      emitEvent('bipEnd', settings, {
+        settings: settings,
+        target: target,
+        targetValues: targetValues,
+        buddies: buddies
+      });
+    }, targetValues.finalDuration);
   }
 
 
@@ -846,14 +852,6 @@
       // Get target values
       targetValues = getValues(target, settings);
 
-      // Emit event
-      emitEvent('bipDrag', settings, {
-        settings: settings,
-        target: target,
-        targetValues: targetValues,
-        buddies: buddies
-      })
-
       // Get buddies and values
       buddies.forEach(function (buddy, i) {
         buddies[i] = (getTransitionValues(buddy, settings, 'buddyValues'));
@@ -866,6 +864,13 @@
       // Set touchstart to true
       touchstart = true;
 
+      // Emit event
+      emitEvent('bipStartDrag', settings, {
+        settings: settings,
+        target: target,
+        targetValues: targetValues,
+        buddies: buddies
+      });
     }
 
 
@@ -909,6 +914,14 @@
       } else {
         moveDirection = 'forward';
       }
+
+      // Emit event
+      emitEvent('bipMove', settings, {
+        settings: settings,
+        target: target,
+        targetValues: targetValues,
+        buddies: buddies
+      });
 
       transitionWithGesture(target, touchmoveX, touchmoveY, settings);
     }
@@ -987,8 +1000,9 @@
 
       // Emit event
       emitEvent('bipInit', settings, {
-        settings: settings
-      })
+        settings: settings,
+        selectors: selectors
+      });
 
     };
 
