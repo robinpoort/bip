@@ -43,6 +43,7 @@
     emitEvents: true
   };
 
+  let touchevent = false;
   let touchstart = false;
   let touchstartX = 0;
   let touchstartY = 0;
@@ -731,6 +732,7 @@
     // Remove transitioning class when totalDuration is over
     setTimeout(function() {
       target.classList.remove(settings.transitioningClass);
+      touchevent = false;
       touchstart = false;
     }, targetValues.finalDuration * .8); // Shorten it a bit because of ease-out it may look like it's done already
 
@@ -790,10 +792,16 @@
 
       // Return false if applicable
       if (!isControl && !isSelector) return false;
+      if (touchevent) return false;
 
       // Return false if target or closest is an ignore target
       ignore = !!event.target.closest('[' + settings.ignore + ']');
       if (ignore) return false;
+
+      // Recognize touchevent
+      if (event.type === 'touchstart') {
+        touchevent = true;
+      }
 
       // Reset values for new touchstart event
       resetValues();
@@ -944,15 +952,12 @@
       ref.parentNode.insertBefore(style, ref);
 
       // Event listeners
-      if ('ontouchstart' in document.documentElement) {
-        document.addEventListener('touchstart', startHandler, true);
-        document.addEventListener('touchmove', moveHandler, true);
-        document.addEventListener('touchend', endHandler, true);
-      } else {
-        document.addEventListener('mousedown', startHandler, true);
-        if (settings.clickDrag) { document.addEventListener('mousemove', moveHandler, true); }
-        document.addEventListener('mouseup', endHandler, true);
-      }
+      document.addEventListener('touchstart', startHandler, true);
+      document.addEventListener('touchmove', moveHandler, true);
+      document.addEventListener('touchend', endHandler, true);
+      document.addEventListener('mousedown', startHandler, true);
+      if (settings.clickDrag) { document.addEventListener('mousemove', moveHandler, true); }
+      document.addEventListener('mouseup', endHandler, true);
 
       // Emit event
       emitEvent('bipInit', settings, {
