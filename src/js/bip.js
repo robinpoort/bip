@@ -758,8 +758,6 @@
       touchstart = false;
     }, targetValues.finalDuration * settings.removeClassValue);
 
-    console.log(targetValues.finalDuration);
-
     // Emit dragged event
     emitEvent('bipDragged', settings, {
       settings: settings,
