@@ -48,12 +48,11 @@
   let touchstartY = 0;
   let touchendX = 0;
   let touchendY = 0;
-  let lastDifference = false;
+  let lastDifference = 0;
   let moveDirection = 'forward';
   let target = false;
   let targetValues = [];
   let buddies = [];
-  let buddiesValues = [];
   let ignore = false;
 
 
@@ -63,11 +62,9 @@
   function resetValues() {
     touchstart = false;
     lastDifference = false;
-    moveDirection = 'forward';
     target = false;
     targetValues = [];
     buddies = [];
-    buddiesValues = [];
   }
 
 
@@ -308,13 +305,13 @@
   function getCalculations(from, to, dimension) {
     // Set values
     let values = {
-      "from": from.value || '',
-      "to": to.value || '',
-      "unit": to.unit || '',
-      "dir": (from.value < to.value) ? 'up' : 'down',
-      "difference": getDifference(from.value, to.value) || 0,
-      "delay": to.delay !== 0 ? to.delay : from.delay,
-      "duration": to.duration !== 0 ? to.duration : from.duration
+      'from': from.value || '',
+      'to': to.value || '',
+      'unit': to.unit || '',
+      'dir': (from.value < to.value) ? 'up' : 'down',
+      'difference': getDifference(from.value, to.value) || 0,
+      'delay': to.delay !== 0 ? to.delay : from.delay,
+      'duration': to.duration !== 0 ? to.duration : from.duration
     };
     if (dimension === 2 && to !== false) {
       values.unit = to.value.unit;
@@ -336,7 +333,7 @@
     let fromValues = {};
     let toValues = {};
     let returnValues = {
-      "element": element
+      'element': element
     };
 
     // Get initial values
@@ -447,9 +444,9 @@
 
   function getEssentials(transitionValues, settings) {
     let values = {
-      "axis": "x",
-      "from": transitionValues[settings.calculator].from,
-      "to": transitionValues[settings.calculator].to
+      'axis': 'x',
+      'from': transitionValues[settings.calculator].from,
+      'to': transitionValues[settings.calculator].to
     };
     if (settings.yAxis.includes(settings.calculator)) {
       values.axis = 'y';
@@ -474,13 +471,13 @@
     const from = getEssentials(transitionValues, settings).from;
     const to = getEssentials(transitionValues, settings).to;
     return {
-      "axis": axis,
-      "from": from,
-      "to": to,
-      "difference": getDifference(from, to),
-      "delay": transitionValues[settings.calculator].delay,
-      "duration": transitionValues[settings.calculator].duration,
-      "totalDuration": transitionValues[settings.calculator].delay + transitionValues[settings.calculator].duration
+      'axis': axis,
+      'from': from,
+      'to': to,
+      'difference': getDifference(from, to),
+      'delay': transitionValues[settings.calculator].delay,
+      'duration': transitionValues[settings.calculator].duration,
+      'totalDuration': transitionValues[settings.calculator].delay + transitionValues[settings.calculator].duration
     };
   }
 
@@ -509,14 +506,14 @@
     let x = (factor-delayFactor)*((totalDuration/(duration*durationFactor))*durationFactor);
     let xRound = Math.max(0, Math.min(1, x));
     return {
-      "value": x,
-      "x": xRound,
-      "delay": delay,
-      "duration": duration,
-      "toggleDuration": totalDuration * (1 - xRound),
-      "toggleDelay": (((totalDuration - delay) / totalDuration) * x) * -1000,
-      "resetDuration": totalDuration - (totalDuration * (1 - xRound)),
-      "resetDelay": -Math.abs(delay) * x,
+      'value': x,
+      'x': xRound,
+      'delay': delay,
+      'duration': duration,
+      'toggleDuration': totalDuration * (1 - xRound),
+      'toggleDelay': (((totalDuration - delay) / totalDuration) * x) * -1000,
+      'resetDuration': totalDuration - (totalDuration * (1 - xRound)),
+      'resetDelay': -Math.abs(delay) * x,
     };
   }
 
@@ -539,7 +536,7 @@
   // Set styling
   // ===========
 
-  function setStyling(element, buddyValues, settings, properties) {
+  function setStyling(element, values, settings, properties) {
     let transforms = [];
     let transitionProperties = [];
     let transitionDelays = [];
@@ -549,17 +546,17 @@
 
     // Loop through matrix values
     settings.matrixValues.forEach(function(prop) {
-      if (buddyValues[prop] !== undefined) {
-        multiplierRoot = calculateMultiplier(buddyValues[prop]);
+      if (values[prop] !== undefined) {
+        multiplierRoot = calculateMultiplier(values[prop]);
         multiplier = multiplierRoot.x;
         if (multiplier) {
-          let x = (parseFloat(buddyValues[prop].from.x) < parseFloat(buddyValues[prop].to.x)) ? parseFloat(buddyValues[prop].from.x) + (buddyValues[prop].difference * multiplier) : parseFloat(buddyValues[prop].from.x) - (buddyValues[prop].difference * multiplier);
-          let y = (parseFloat(buddyValues[prop].from.y) < parseFloat(buddyValues[prop].to.y)) ? parseFloat(buddyValues[prop].from.y) + (buddyValues[prop].ydifference * multiplier) : parseFloat(buddyValues[prop].from.y) - (buddyValues[prop].ydifference * multiplier) || false;
-          buddyValues[prop].multiplier = multiplier;
-          buddyValues[prop].value = multiplierRoot.value
-          transforms.push(prop + '(' + x + buddyValues[prop].unit + (y ? ',' + y + buddyValues[prop].unit + ')' : ')'));
+          let x = (parseFloat(values[prop].from.x) < parseFloat(values[prop].to.x)) ? parseFloat(values[prop].from.x) + (values[prop].difference * multiplier) : parseFloat(values[prop].from.x) - (values[prop].difference * multiplier);
+          let y = (parseFloat(values[prop].from.y) < parseFloat(values[prop].to.y)) ? parseFloat(values[prop].from.y) + (values[prop].ydifference * multiplier) : parseFloat(values[prop].from.y) - (values[prop].ydifference * multiplier);
+          values[prop].multiplier = multiplier;
+          values[prop].value = multiplierRoot.value
+          transforms.push(prop + '(' + x + values[prop].unit + (y ? ',' + y + values[prop].unit + ')' : ')'));
           if (element === target && prop === settings.calculator) {
-            targetValues.finalMove = {"x": x, "y": y};
+            targetValues.finalMove = {'x': x, 'y': y};
             targetValues.finalMultiplier = multiplier;
           }
         }
@@ -575,7 +572,7 @@
 
     // Set transition properties
     else {
-      transitionProperties.push("transform");
+      transitionProperties.push('transform');
       transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay') + 'ms');
       transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration') + 'ms');
       if (element === target && settings.calculator === 'translate') {
@@ -586,7 +583,7 @@
     // Loop through CSS values
     settings.cssValues.forEach(function(prop) {
       if (prop !== undefined) {
-        let buddyValue = buddyValues[prop];
+        let buddyValue = values[prop];
         if (buddyValue !== undefined) {
           multiplierRoot = calculateMultiplier(buddyValue);
           multiplier = multiplierRoot.x;
@@ -628,18 +625,20 @@
   // ===============================
 
   function transitionWithGesture(element, touchmoveX, touchmoveY, settings) {
+
+    // Calculate movedX and movedY
     let movedX = Math.abs(touchmoveX - touchstartX);
     let movedY = Math.abs(touchmoveY - touchstartY);
-
 
     // Add movedX and movedY to targetValues
     targetValues.movedX = movedX;
     targetValues.movedY = movedY;
 
-    buddies.forEach(function (buddy, i) {
-      let count = (buddy.className.match(/openedby:/g) || []).length;
-      if (count === 0 || (count === 1 && buddy.classList.contains('openedby:' + element.getAttribute(settings.id)))) {
-        setStyling(buddy, buddiesValues[i], settings, 'all');
+    // Handle buddies
+    buddies.forEach(function (buddy) {
+      let count = (buddy.element.className.match(/openedby:/g) || []).length;
+      if (count === 0 || (count === 1 && buddy.element.classList.contains('openedby:' + element.getAttribute(settings.id)))) {
+        setStyling(buddy.element, buddy, settings, 'all');
       }
     });
   }
@@ -661,18 +660,18 @@
 
     // Handle buddies
     if (buddies.length > 0) {
-      buddies.forEach(function(buddy, i) {
+      buddies.forEach(function(buddy) {
         if (target.classList.contains(settings.openClass)) {
-          buddy.classList.add(settings.openClass, 'openedby:' + target.getAttribute(settings.id));
+          buddy.element.classList.add(settings.openClass, 'openedby:' + target.getAttribute(settings.id));
         } else {
-          buddy.classList.remove('openedby:' + target.getAttribute(settings.id));
-          let count = (buddy.className.match(/openedby:/g) || []).length;
+          buddy.element.classList.remove('openedby:' + target.getAttribute(settings.id));
+          let count = (buddy.element.className.match(/openedby:/g) || []).length;
           if (count === 0) {
-            buddy.classList.remove(settings.openClass);
+            buddy.element.classList.remove(settings.openClass);
           }
         }
         if (setStyle) {
-          setStyling(buddy, buddiesValues[i], settings, 'toggle');
+          setStyling(buddy.element, buddy, settings, 'toggle');
         }
       });
     }
@@ -686,7 +685,7 @@
     emitEvent('bipToggle', settings, {
       settings: settings,
       targetValues: targetValues,
-      buddiesValues: buddiesValues
+      buddies: buddies
     })
   }
 
@@ -697,10 +696,10 @@
   function resetStyle(target, settings, setStyle) {
     target.removeAttribute('style');
     if (buddies) {
-      buddies.forEach(function (buddy, i) {
-        buddy.removeAttribute('style');
+      buddies.forEach(function (buddy) {
+        buddy.element.removeAttribute('style');
         if (setStyle) {
-          setStyling(buddy, buddiesValues[i], settings, 'reset');
+          setStyling(buddy.element, buddy, settings, 'reset');
         }
       });
     }
@@ -739,7 +738,7 @@
     emitEvent('bipDragged', settings, {
       settings: settings,
       targetValues: targetValues,
-      buddiesValues: buddiesValues
+      buddies: buddies
     })
   }
 
@@ -783,8 +782,8 @@
       selectors.forEach(function(el, i) {
         if (event.target.closest(el.controls) && event.target.closest(el.controls).classList.contains('openedby:' + selector.replace(/\W/g, '') + i)) {
           isControl = {
-            "controls": event.target.closest(el.controls),
-            "target": el.target
+            'controls': event.target.closest(el.controls),
+            'target': el.target
           };
         }
       });
@@ -815,8 +814,8 @@
       targetValues = getValues(target, settings);
 
       // Get buddies and values
-      buddies.forEach(function (buddy) {
-        buddiesValues.push(getTransitionValues(buddy, settings));
+      buddies.forEach(function (buddy, i) {
+        buddies[i] = (getTransitionValues(buddy, settings));
       });
 
       // Disable styling and disable user-select
@@ -830,7 +829,7 @@
       emitEvent('bipDrag', settings, {
         settings: settings,
         targetValues: targetValues,
-        buddiesValues: buddiesValues
+        buddies: buddies
       })
 
     }
@@ -928,8 +927,8 @@
       document.querySelectorAll(selector).forEach(function(el,i) {
         el.setAttribute(settings.id, selector.replace(/\W/g, '') + i);
         selectors[i] = {
-          "target": el,
-          "controls": el.getAttribute(settings.controllers)
+          'target': el,
+          'controls': el.getAttribute(settings.controllers)
         };
 
         // Set default aria for each controller
@@ -940,8 +939,8 @@
 
       // Make sure no text will be selected while dragging
       const style = document.createElement('style');
-      style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; }';
       const ref = document.querySelector('script');
+      style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; }';
       ref.parentNode.insertBefore(style, ref);
 
       // Event listeners
