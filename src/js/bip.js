@@ -25,7 +25,6 @@
 
     buddies: 'data-touch-buddies',
     controllers: 'data-touch-controllers',
-    id: 'data-touch-id',
     ignore: 'data-touch-ignore',
     calculator: 'translate',
 
@@ -33,8 +32,8 @@
     difference: 10,
     maxEndDuration: 500,
     openClass: 'is-open',
-    transitioningClass: 'is-transitioning',
     touchmoveClass: 'is-touchmove',
+    transitioningClass: 'is-transitioning',
 
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
