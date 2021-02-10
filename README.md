@@ -12,6 +12,60 @@ Swipe support for CSS transitions. Just write your CSS transitions, add a toggle
 ## Demo
 [https://robinpoort.github.io/bip/](https://robinpoort.github.io/bip/)
 
+## Default use
+
+### Add your HTML
+
+```html
+<div class="target" data-touch data-touch-controllers=".control, .overlay" data-touch-buddies=".buddy">
+    <button class="control" type="button">Swipe me</button>
+</div>
+<div class="overlay">
+    Swiping me can close the target
+</div>
+<div class="buddy">
+    I will transition together
+</div>
+<div data-touch-ignore>
+    Swiping me will not do anything
+</div>
+```
+
+### Make sure each "target", "controller" and "buddy" are transitioned using the 'is-open' class
+```css
+.target {
+    transform: translateY(-50%);
+    transition: transform 400ms;
+}
+.target.is-open {
+    transform: translateY(0);
+}
+.overlay {
+    opacity: 0;
+    transition: opacity 300ms;
+}
+.overlay.is-open {
+    opacity: 1;
+}
+.buddy {
+    transform: scale(.6);
+    opacity: .5;
+    transition: transform 400ms, opacity 300ms 100ms;
+}
+.buddy.is-open {
+    transform: scale(1);
+    opacity: 1;
+}
+```
+
+Note: If you want to transition things like width, height, top, left etc., make sure to add them to the `cssValues` option.
+
+### Initialize
+```html
+<script src="src/js/bip.js"></script>
+<script>const bip = new Bip('[data-touch]');</script>
+```
+
 ## Acknowledgements
 - Calculations are based on linear transitions, so swiping and clicking might look slightly different when using longer transition times combined with a non-linear bezier.
 - CssValues should be single values, shorthand CSS is not supported.
@@ -65,8 +119,68 @@ Enables clickdrag on none touch devices. (default: true)
 ### emitEvents
 Wether to emit events or not. (default: true)
 
-## APIs
-...
+## Methods
+
+### toggle
+Toggles a target.
+
+```js
+const bip = new Bip('[data-touch]');
+bip.toggle(document.querySelector('.selector');
+```
 
 ## Events
-...
+
+### bipInit
+fired when initiated. Access to: settings, selectors
+
+```js
+document.addEventListener('bipInit', function (e) {
+    console.log('bipInit', e.detail);
+}, false);
+```
+
+### bipCalculateFrom
+fired when target "from" values have been read. Access to: settings, target, fromValues
+
+```js
+document.addEventListener('bipInit', function (e) {
+    console.log('bipCalculateFrom', e.detail);
+}, false);
+```
+
+### bipCalculateTo
+fired when target "to" values have been read. Access to: settings, target, fromValues, toValues
+
+```js
+document.addEventListener('bipCalculateTo', function (e) {
+    console.log('bipCalculateFrom', e.detail);
+}, false);
+```
+
+### bipStartDrag
+fired when start swipe/drag. Access to: settings, target, targetValues, buddies
+
+```js
+document.addEventListener('bipStartDrag', function (e) {
+    console.log('bipCalculateFrom', e.detail);
+}, false);
+```
+
+### bipEndDrag
+fired when end swipe/drag. Access to: settings, target, targetValues, buddies
+
+```js
+document.addEventListener('bipEndDrag', function (e) {
+    console.log('bipCalculateFrom', e.detail);
+}, false);
+```
+
+### bipEnd
+fired when complete transition is done. Access to: settings, target, targetValues, buddies
+
+```js
+document.addEventListener('bipEnd', function (e) {
+    console.log('bipCalculateFrom', e.detail);
+}, false);
+```

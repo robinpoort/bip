@@ -300,10 +300,12 @@
                 <span class="arrow2 arrow2top"></span>
             </span>
         </button>
-        <h1>Top</h1>
-        <p>Top details</p>
-        <p>Top details</p>
-        <p>Top details</p>
+        <div data-touch-ignore>
+            <h1>Top</h1>
+            <p>Top details</p>
+            <p>Top details</p>
+            <p>Top details</p>
+        </div>
     </div>
     <div class="right" data-touch data-touch-controllers=".controlRight, .overlay" data-touch-buddies=".burger1Right, .burger2Right, .burger3Right">
         <button class="controlRight" type="button">
@@ -373,7 +375,7 @@
     // console.log(bip);
 
     // bip.toggle(document.querySelector('[data-touch-id="right"'));
-
+    //
     // function checkSetHeight(e) {
     //     e.target.classList.add('heightCheck');
     //     var style = document.createElement('style');
@@ -383,21 +385,16 @@
     //     style.id = 'addClass';
     //     ref.parentNode.insertBefore(style, ref);
     // }
-    //
+
+    // document.addEventListener('bipInit', function (e) {
+    //     console.log('bipInit');
+    // }, false);
     // document.addEventListener('bipCalculateFrom', function (e) {
     //   console.log('Calculate from', e.detail);
     // }, false);
     // document.addEventListener('bipCalculateTo', function (e) {
-    //     console.log(e.detail);
-    //   checkSetHeight(e.detail);
-    // }, false);
-    // document.addEventListener('bipEndDrag', function (e) {
-    //     console.log('End drag', e.detail);
-    // }, false);
-    // document.addEventListener('bipEnd', function (e) {
-    //     console.log('End', e.detail);
-    //     var el = document.getElementById('addClass');
-    //     el.parentNode.removeChild(el);
+    //     console.log('Calculate to', e.detail);
+    //   // checkSetHeight(e.detail);
     // }, false);
     // document.addEventListener('bipStartDrag', function (e) {
     //     console.log('Start drag', e.detail);
@@ -405,8 +402,13 @@
     // document.addEventListener('bipMove', function (e) {
     //     console.log('Move', e.detail);
     // }, false);
-    // document.addEventListener('bipInit', function (e) {
-    //     console.log('Init', e.detail);
+    // document.addEventListener('bipEndDrag', function (e) {
+    //     console.log('End drag', e.detail);
+    // }, false);
+    // document.addEventListener('bipEnd', function (e) {
+    //     console.log('End', e.detail);
+    //     // var el = document.getElementById('addClass');
+    //     // el.parentNode.removeChild(el);
     // }, false);
 
 </script>

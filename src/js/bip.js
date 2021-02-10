@@ -571,6 +571,22 @@
     let multiplierRoot = [];
     let multiplier = 1;
 
+
+    // Set transition properties
+    // -------------------------
+
+    function setTransitionProperties(prop, type) {
+      transitionProperties.push(prop);
+      transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
+      transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
+      if (element === target && settings.calculator === type) {
+        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', settings);
+        if (isNaN(targetValues.finalDuration)) {
+          targetValues.finalDuration = targetValues.totalDuration
+        }
+      }
+    }
+
     // Loop through matrix values
     settings.matrixValues.forEach(function(prop) {
       if (values[prop] !== undefined) {
@@ -590,7 +606,6 @@
       }
     });
 
-
     // Set transforms
     if (properties === 'all') {
       transforms = transforms.join(' ');
@@ -599,15 +614,7 @@
 
     // Set transition properties
     else {
-      transitionProperties.push('transform');
-      transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
-      transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
-      if (element === target && settings.calculator === 'translate') {
-        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', settings);
-        if (isNaN(targetValues.finalDuration)) {
-          targetValues.finalDuration = targetValues.totalDuration
-        }
-      }
+      setTransitionProperties('transform', 'translate');
     }
 
     // Loop through CSS values
@@ -626,15 +633,7 @@
               element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
             }
           } else {
-            transitionProperties.push(prop);
-            transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
-            transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
-            if (element === target && settings.calculator === prop) {
-              targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', settings);
-              if (isNaN(targetValues.finalDuration)) {
-                targetValues.finalDuration = targetValues.totalDuration
-              }
-            }
+            setTransitionProperties(prop, prop);
           }
         }
       }
@@ -793,7 +792,7 @@
    * Constructor
    */
 
-  return function (selector, options) {
+  return function(selector, options) {
 
     // Unique Variables
     const publicAPIs = {};
@@ -914,14 +913,6 @@
         moveDirection = 'forward';
       }
 
-      // Emit event
-      emitEvent('bipMove', settings, {
-        settings: settings,
-        target: target,
-        targetValues: targetValues,
-        buddies: buddies
-      });
-
       transitionWithGesture(target, touchmoveX, touchmoveY, settings);
     }
 
@@ -961,7 +952,7 @@
      * Init
      */
 
-    publicAPIs.init = function (options) {
+    function init(options) {
 
       // feature test
       if (!supports) return;
@@ -1003,10 +994,10 @@
         selectors: selectors
       });
 
-    };
+    }
 
     // Initialize the plugin
-    publicAPIs.init(options);
+    init(options);
 
     // Return the public APIs
     return publicAPIs;
