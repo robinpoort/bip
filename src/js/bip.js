@@ -748,6 +748,7 @@
 
     // Remove touchmove class from target
     target.classList.remove(settings.touchmoveClass);
+    document.body.classList.remove('has-touchmove');
 
     // Emit event
     emitEvent('bipEndDrag', settings, {
@@ -883,6 +884,11 @@
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
 
+      // Add has-touchmove class
+      if (!document.body.classList.contains('has-touchmove') && event.type === 'touchmove') {
+        document.body.classList.add('has-touchmove');
+      }
+
       // Variables
       let touchmoveX = event.screenX || (event.changedTouches ? event.changedTouches[0].screenX : false);
       let touchmoveY = event.screenY || (event.changedTouches ? event.changedTouches[0].screenY : false);
@@ -913,7 +919,10 @@
         moveDirection = 'forward';
       }
 
-      transitionWithGesture(target, touchmoveX, touchmoveY, settings);
+      // Smoother transitions by using requestAnimationframe
+      window.requestAnimationFrame(function () {
+        transitionWithGesture(target, touchmoveX, touchmoveY, settings);
+      });
     }
 
 
@@ -977,7 +986,7 @@
       // Make sure no text will be selected while dragging
       const style = document.createElement('style');
       const ref = document.querySelector('script');
-      style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; }';
+      style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; } .has-touchmove { overflow: hidden; }';
       ref.parentNode.insertBefore(style, ref);
 
       // Event listeners
