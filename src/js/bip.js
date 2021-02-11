@@ -1013,7 +1013,7 @@
      * Init
      */
 
-    function init(options) {
+    publicAPIs.init = function(options) {
 
       // feature test
       if (!supports) return;
@@ -1058,7 +1058,7 @@
     }
 
     // Initialize the plugin
-    init(options);
+    publicAPIs.init(options);
 
     // Return the public APIs
     return publicAPIs;
