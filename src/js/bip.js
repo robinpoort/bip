@@ -1006,6 +1006,9 @@
           control.removeAttribute('style');
         });
       })
+
+      // Reset settings
+      settings = null;
     };
 
 
@@ -1022,7 +1025,7 @@
       settings = extend(defaults, options || {});
 
       // Grab all selectors
-      document.querySelectorAll(selector).forEach(function(el,i) {
+      document.querySelectorAll(selector).forEach(function(el, i) {
         el.setAttribute(settings.id, selector.replace(/\W/g, '') + i);
         selectors[i] = {
           'target': el,
@@ -1035,11 +1038,14 @@
         });
       });
 
-      // Make sure no text will be selected while dragging
+      // Bip styles
       const style = document.createElement('style');
       const ref = document.querySelector('script');
-      style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; } .has-touchmove { overflow: hidden; }';
-      ref.parentNode.insertBefore(style, ref);
+      style.id = 'bip-styles';
+      if (!document.getElementById('bip-styles')) {
+        style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; } .has-touchmove { overflow: hidden; }';
+        ref.parentNode.insertBefore(style, ref);
+      }
 
       // Event listeners
       document.addEventListener('touchstart', startHandler, true);
