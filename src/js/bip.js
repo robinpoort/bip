@@ -18,7 +18,7 @@
 
   let supports = 'querySelector' in document && 'addEventListener' in window;
 
-    
+
   // Default variables
   // =================
   let defaults = {
@@ -316,6 +316,7 @@
   // ================
 
   function getCalculations(from, to, dimension) {
+    if (!from || !to) return false;
     // Set values
     let values = {
       'from': from.value || '',
@@ -502,7 +503,14 @@
   // ==========
 
   function getValues(target, settings) {
+
+    // Get transitionvalues
     const transitionValues = getTransitionValues(target, settings, 'getValues');
+
+    // Return false if calculator styling is not found
+    if (!transitionValues[settings.calculator]) return false;
+
+    // Return values
     const axis = getEssentials(transitionValues, settings).axis;
     const from = getEssentials(transitionValues, settings).from;
     const to = getEssentials(transitionValues, settings).to;
@@ -862,6 +870,7 @@
 
       // Get target values
       targetValues = getValues(target, settings);
+      if (!targetValues) return false;
 
       // Get buddies and values
       buddies.forEach(function (buddy, i) {
