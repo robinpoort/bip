@@ -853,6 +853,9 @@
         touchevent = true;
       }
 
+      // Prevent default scrolling on touch devices
+      event.preventDefault();
+
       // Reset values for new touchstart event
       resetValues();
 
@@ -904,6 +907,9 @@
       if (!target) return false;
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
+
+      // Prevent default scrolling on touch devices
+      event.preventDefault();
 
       // Add has-touchmove class
       if (!document.body.classList.contains('has-touchmove') && event.type === 'touchmove') {
@@ -983,12 +989,12 @@
     publicAPIs.destroy = function () {
 
       // Remove eventlisteners
-      document.removeEventListener('touchstart', startHandler, true);
-      document.removeEventListener('touchmove', moveHandler, true);
-      document.removeEventListener('touchend', endHandler, true);
-      document.removeEventListener('mousedown', startHandler, true);
-      if (settings.clickDrag) { document.removeEventListener('mousemove', moveHandler, true); }
-      document.removeEventListener('mouseup', endHandler, true);
+      document.removeEventListener('touchstart', startHandler, false);
+      document.removeEventListener('touchmove', moveHandler, false);
+      document.removeEventListener('touchend', endHandler, false);
+      document.removeEventListener('mousedown', startHandler, false);
+      if (settings.clickDrag) { document.removeEventListener('mousemove', moveHandler, false); }
+      document.removeEventListener('mouseup', endHandler, false);
 
       // Remove body classes
       document.body.classList.remove('bip-busy', 'has-touchmove');
@@ -1046,12 +1052,12 @@
       }
 
       // Event listeners
-      document.addEventListener('touchstart', startHandler, true);
-      document.addEventListener('touchmove', moveHandler, true);
-      document.addEventListener('touchend', endHandler, true);
-      document.addEventListener('mousedown', startHandler, true);
-      if (settings.clickDrag) { document.addEventListener('mousemove', moveHandler, true); }
-      document.addEventListener('mouseup', endHandler, true);
+      document.addEventListener('touchstart', startHandler, {passive: false});
+      document.addEventListener('touchmove', moveHandler, {passive: false});
+      document.addEventListener('touchend', endHandler, {passive: false});
+      document.addEventListener('mousedown', startHandler, false);
+      if (settings.clickDrag) { document.addEventListener('mousemove', moveHandler, false); }
+      document.addEventListener('mouseup', endHandler, false);
 
       // Emit event
       emitEvent('bipInit', settings, {
