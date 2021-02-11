@@ -25,7 +25,6 @@
 
     buddies: 'data-touch-buddies',
     controllers: 'data-touch-controllers',
-    id: 'data-touch-id',
     ignore: 'data-touch-ignore',
     calculator: 'translate',
 
@@ -33,8 +32,8 @@
     difference: 10,
     maxEndDuration: 500,
     openClass: 'is-open',
-    transitioningClass: 'is-transitioning',
     touchmoveClass: 'is-touchmove',
+    transitioningClass: 'is-transitioning',
 
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
@@ -67,6 +66,14 @@
     target = false;
     targetValues = [];
     buddies = [];
+  }
+
+
+  // forEach polyfill
+  // ================
+
+  if (window.NodeList && !NodeList.prototype.forEach) {
+    NodeList.prototype.forEach = Array.prototype.forEach;
   }
 
 
@@ -255,7 +262,7 @@
     let transitionValues = style[prop].split(', ');
     let value = 0;
     transition.split(', ').forEach(function(el, i) {
-      if (el.includes(type)) {
+      if (el.indexOf(type) !== -1) {
         value = parseFloat(transitionValues[i]) * 1000;
       }
     });
@@ -275,6 +282,10 @@
   // =============
 
   function isEquivalent(a, b) {
+
+    // Return false if object is not an object
+    if (Object.prototype.toString.call(1) !== '[object Object]') return false;
+
     // Create arrays of property names
     let aProps = Object.getOwnPropertyNames(a);
     let bProps = Object.getOwnPropertyNames(b);
@@ -305,6 +316,7 @@
   // ================
 
   function getCalculations(from, to, dimension) {
+    if (!from || !to) return false;
     // Set values
     let values = {
       'from': from.value || '',
@@ -473,7 +485,7 @@
       'from': transitionValues[settings.calculator].from,
       'to': transitionValues[settings.calculator].to
     };
-    if (settings.yAxis.includes(settings.calculator)) {
+    if (settings.yAxis.indexOf(settings.calculator) !== -1) {
       values.axis = 'y';
     }
     if (settings.calculator === 'translate') {
@@ -491,7 +503,14 @@
   // ==========
 
   function getValues(target, settings) {
+
+    // Get transitionvalues
     const transitionValues = getTransitionValues(target, settings, 'getValues');
+
+    // Return false if calculator styling is not found
+    if (!transitionValues[settings.calculator]) return false;
+
+    // Return values
     const axis = getEssentials(transitionValues, settings).axis;
     const from = getEssentials(transitionValues, settings).from;
     const to = getEssentials(transitionValues, settings).to;
@@ -572,6 +591,22 @@
     let multiplierRoot = [];
     let multiplier = 1;
 
+
+    // Set transition properties
+    // -------------------------
+
+    function setTransitionProperties(prop, type) {
+      transitionProperties.push(prop);
+      transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
+      transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
+      if (element === target && settings.calculator === type) {
+        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', settings);
+        if (isNaN(targetValues.finalDuration)) {
+          targetValues.finalDuration = targetValues.totalDuration
+        }
+      }
+    }
+
     // Loop through matrix values
     settings.matrixValues.forEach(function(prop) {
       if (values[prop] !== undefined) {
@@ -591,7 +626,6 @@
       }
     });
 
-
     // Set transforms
     if (properties === 'all') {
       transforms = transforms.join(' ');
@@ -600,15 +634,7 @@
 
     // Set transition properties
     else {
-      transitionProperties.push('transform');
-      transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
-      transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
-      if (element === target && settings.calculator === 'translate') {
-        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', settings);
-        if (isNaN(targetValues.finalDuration)) {
-          targetValues.finalDuration = targetValues.totalDuration
-        }
-      }
+      setTransitionProperties('transform', 'translate');
     }
 
     // Loop through CSS values
@@ -627,15 +653,7 @@
               element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
             }
           } else {
-            transitionProperties.push(prop);
-            transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
-            transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
-            if (element === target && settings.calculator === prop) {
-              targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', settings);
-              if (isNaN(targetValues.finalDuration)) {
-                targetValues.finalDuration = targetValues.totalDuration
-              }
-            }
+            setTransitionProperties(prop, prop);
           }
         }
       }
@@ -750,6 +768,7 @@
 
     // Remove touchmove class from target
     target.classList.remove(settings.touchmoveClass);
+    document.body.classList.remove('has-touchmove');
 
     // Emit event
     emitEvent('bipEndDrag', settings, {
@@ -794,7 +813,7 @@
    * Constructor
    */
 
-  return function (selector, options) {
+  return function(selector, options) {
 
     // Unique Variables
     const publicAPIs = {};
@@ -851,6 +870,7 @@
 
       // Get target values
       targetValues = getValues(target, settings);
+      if (!targetValues) return false;
 
       // Get buddies and values
       buddies.forEach(function (buddy, i) {
@@ -885,6 +905,11 @@
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
 
+      // Add has-touchmove class
+      if (!document.body.classList.contains('has-touchmove') && event.type === 'touchmove') {
+        document.body.classList.add('has-touchmove');
+      }
+
       // Variables
       let touchmoveX = event.screenX || (event.changedTouches ? event.changedTouches[0].screenX : false);
       let touchmoveY = event.screenY || (event.changedTouches ? event.changedTouches[0].screenY : false);
@@ -915,15 +940,10 @@
         moveDirection = 'forward';
       }
 
-      // Emit event
-      emitEvent('bipMove', settings, {
-        settings: settings,
-        target: target,
-        targetValues: targetValues,
-        buddies: buddies
+      // Smoother transitions by using requestAnimationframe
+      window.requestAnimationFrame(function () {
+        transitionWithGesture(target, touchmoveX, touchmoveY, settings);
       });
-
-      transitionWithGesture(target, touchmoveX, touchmoveY, settings);
     }
 
 
@@ -959,10 +979,44 @@
 
 
     /**
+     * Destroy
+     */
+
+    publicAPIs.destroy = function () {
+
+      // Remove eventlisteners
+      document.removeEventListener('touchstart', startHandler, true);
+      document.removeEventListener('touchmove', moveHandler, true);
+      document.removeEventListener('touchend', endHandler, true);
+      document.removeEventListener('mousedown', startHandler, true);
+      if (settings.clickDrag) { document.removeEventListener('mousemove', moveHandler, true); }
+      document.removeEventListener('mouseup', endHandler, true);
+
+      // Remove body classes
+      document.body.classList.remove('bip-busy', 'has-touchmove');
+
+      // Remove styling from all selectors
+      selectors.forEach(function(selector) {
+        selector.target.style.transition = 'none';
+        selector.target.classList.remove(settings.openClass, settings.touchmoveClass, settings.transitioningClass);
+        selector.target.removeAttribute('style');
+        document.querySelectorAll(selector.controls).forEach(function(control) {
+          control.style.transition = 'none';
+          control.classList.remove(settings.openClass);
+          control.removeAttribute('style');
+        });
+      })
+
+      // Reset settings
+      settings = null;
+    };
+
+
+    /**
      * Init
      */
 
-    publicAPIs.init = function (options) {
+    publicAPIs.init = function(options) {
 
       // feature test
       if (!supports) return;
@@ -971,7 +1025,7 @@
       settings = extend(defaults, options || {});
 
       // Grab all selectors
-      document.querySelectorAll(selector).forEach(function(el,i) {
+      document.querySelectorAll(selector).forEach(function(el, i) {
         el.setAttribute(settings.id, selector.replace(/\W/g, '') + i);
         selectors[i] = {
           'target': el,
@@ -984,11 +1038,14 @@
         });
       });
 
-      // Make sure no text will be selected while dragging
+      // Bip styles
       const style = document.createElement('style');
       const ref = document.querySelector('script');
-      style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; }';
-      ref.parentNode.insertBefore(style, ref);
+      style.id = 'bip-styles';
+      if (!document.getElementById('bip-styles')) {
+        style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; } .has-touchmove { overflow: hidden; }';
+        ref.parentNode.insertBefore(style, ref);
+      }
 
       // Event listeners
       document.addEventListener('touchstart', startHandler, true);
@@ -1004,7 +1061,7 @@
         selectors: selectors
       });
 
-    };
+    }
 
     // Initialize the plugin
     publicAPIs.init(options);
