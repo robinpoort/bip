@@ -116,7 +116,7 @@ Calculator elements where the axis is always 'y'. (default: `['top', 'bottom', '
 Enables clickdrag on none touch devices. (default: `true`)
 
 ### emitEvents
-Wether to emit events or not. (default: `true`)
+Whether to emit events or not. (default: `true`)
 
 ## Methods
 
