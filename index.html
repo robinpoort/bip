@@ -18,19 +18,11 @@
         padding: 0;
         font-family: sans-serif;
         height: 100%;
-        background: #fff;
+        background: #ecf0f1;
     }
 
     *, *::before, *::after {
         box-sizing: border-box;
-    }
-
-    .wrapper {
-        position: relative;
-        background: #ecf0f1;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
     }
 
     /* Demo styling */
@@ -44,7 +36,6 @@
         background: rgba(0, 0, 0, .6);
         opacity: 0;
         transition: opacity 300ms linear;
-        /*transform: scale(.6);*/
         pointer-events: none;
         touch-action: none;
         backdrop-filter: blur(10px);
@@ -88,10 +79,6 @@
         z-index: 3;
     }
 
-    .bottom button.is-open {
-        transform: translate(-40vw, -100%) scale(1.2);
-    }
-
     .top button,
     .bottom button {
         position: absolute;
@@ -116,8 +103,6 @@
 
     .bottom button {
         top: 0;
-        transform: translateX(0);
-        transition: transform 250ms;
     }
 
     .bottom h1 {
@@ -126,6 +111,7 @@
 
     .right,
     .left {
+        top: 0;
         height: 100%;
         width: 50vw;
         max-width: 240px;
@@ -182,15 +168,9 @@
     }
 
     .content {
-        padding: 4rem 2rem;
-        will-change: auto;
-        transition: transform 200ms linear 100ms;
-        transform: scale(1);
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        padding: 2rem;
+        max-width: 960px;
+        margin: auto;
     }
 
     .content.is-open {
@@ -288,67 +268,146 @@
     .bottom .arrow {
         transform: rotate(180deg);
     }
+
+    .popup {
+        position: absolute;
+        right: 0;
+        bottom: 20px;
+        width: 200px;
+        height: 200px;
+        background: #f5f5f5;
+        border-radius: 1em 0 0 1em;
+        box-shadow: 0 0 5px rgba(0,0,0,.25);
+        transform:  translateX(101%);
+        transition: transform 400ms;
+    }
+
+    .popup.is-open {
+        transform: translateX(0);
+    }
+
+    .popup button {
+        position: absolute;
+        top: -4em;
+        left: -.5em;
+    }
+
+    .demos {
+        padding: 0 2rem 2rem;
+        max-width: 960px;
+        margin: auto;
+    }
+
+    .demo {
+        position: relative;
+        background: #fff;
+        border: 4px solid #ccc;
+        height: 320px;
+        overflow: hidden;
+    }
+
+    .article {
+        padding: 4rem 2rem;
+        max-width: 800px;
+        margin: auto;
+    }
 </style>
 <body>
 
-<div class="wrapper">
-    <div class="overlay"></div>
-    <div class="top" data-touch data-touch-controllers=".controlTop, .overlay" data-touch-buddies=".content, .arrow1top, .arrow2top">
-        <button class="controlTop" type="button">
-            <span class="arrow">
-                <span class="arrow1 arrow1top"></span>
-                <span class="arrow2 arrow2top"></span>
-            </span>
-        </button>
-        <div data-touch-ignore>
-            <h1>Top</h1>
-            <p>Top details</p>
-            <p>Top details</p>
-            <p>Top details</p>
+
+<div class="content">
+    <h1>Bip: Swipe support for CSS transitions.</h1>
+    <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Donec sed odio dui. Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Sed posuere consectetur est at lobortis.</p>
+</div>
+<div class="demos">
+    <h2>Demos</h2>
+    <div class="sidemenus">
+        <h3>Side menus</h3>
+        <div class="demo">
+            <div class="article">
+                <h4>Left & right slide menus</h4>
+                <p>Open and close by clicking buttons or swipe/drag.</p>
+            </div>
+            <div class="overlay" data-touch-id="sidemenu-overlay"></div>
+            <div class="right" data-touch data-touch-controllers=".controlRight, [data-touch-id=sidemenu-overlay]" data-touch-buddies=".burger1Right, .burger2Right, .burger3Right">
+                <button class="controlRight" type="button">
+                    <span class="hamburger">
+                        <span class="burger1 burger1Right"></span>
+                        <span class="burger2 burger2Right"></span>
+                        <span class="burger3 burger3Right"></span>
+                    </span>
+                </button>
+                <h1>Right</h1>
+                <p>Right details</p>
+                <p>Right details</p>
+                <p>Right details</p>
+            </div>
+            <div class="left" data-touch data-touch-controllers=".controlLeft, [data-touch-id=sidemenu-overlay]" data-touch-buddies=".burger1Left, .burger2Left, .burger3Left">
+                <button class="controlLeft" type="button">
+                    <span class="hamburger">
+                        <span class="burger1 burger1Left"></span>
+                        <span class="burger2 burger2Left"></span>
+                        <span class="burger3 burger3Left"></span>
+                    </span>
+                </button>
+                <h1>Left</h1>
+                <p>Left details</p>
+                <p>Left details</p>
+                <p>Left details</p>
+            </div>
         </div>
     </div>
-    <div class="right" data-touch data-touch-controllers=".controlRight, .overlay" data-touch-buddies=".burger1Right, .burger2Right, .burger3Right">
-        <button class="controlRight" type="button">
-            <span class="hamburger">
-                <span class="burger1 burger1Right"></span>
-                <span class="burger2 burger2Right"></span>
-                <span class="burger3 burger3Right"></span>
-            </span>
-        </button>
-        <h1>Right</h1>
-        <p>Right details</p>
-        <p>Right details</p>
-        <p>Right details</p>
+    <div class="topbottomdrawers">
+        <h3>Top and bottom drawers</h3>
+        <div class="demo">
+            <div class="article">
+                <h4>Top and bottom drawers</h4>
+                <p>Open and close by clicking buttons or swipe/drag.</p>
+            </div>
+            <div class="overlay" data-touch-id="drawer-overlay"></div>
+            <div class="top" data-touch data-touch-controllers=".controlTop, [data-touch-id=drawer-overlay]" data-touch-buddies=".arrow1top, .arrow2top">
+                <button class="controlTop" type="button">
+                    <span class="arrow">
+                        <span class="arrow1 arrow1top"></span>
+                        <span class="arrow2 arrow2top"></span>
+                    </span>
+                </button>
+                <div data-touch-ignore>
+                    <h1>Top</h1>
+                    <p>Top details</p>
+                    <p>Top details</p>
+                    <p>Top details</p>
+                </div>
+            </div>
+            <div class="bottom" data-touch data-touch-controllers=".controlBottom, [data-touch-id=drawer-overlay]" data-touch-buddies=".arrow1bottom, .arrow2bottom">
+                <button class="controlBottom" type="button">
+                    <span class="arrow">
+                        <span class="arrow1 arrow1bottom"></span>
+                        <span class="arrow2 arrow2bottom"></span>
+                    </span>
+                </button>
+                <h1>Bottom</h1>
+                <p>Bottom details</p>
+                <p>Bottom details</p>
+                <p>Bottom details</p>
+            </div>
+        </div>
     </div>
-    <div class="bottom" data-touch data-touch-controllers=".controlBottom, .overlay" data-touch-buddies=".bottombutton, .content, .arrow1bottom, .arrow2bottom">
-        <button class="controlBottom" type="button">
-            <span class="arrow">
-                <span class="arrow1 arrow1Bottom"></span>
-                <span class="arrow2 arrow2Bottom"></span>
-            </span>
-        </button>
-        <h1>Bottom</h1>
-        <p>Bottom details</p>
-        <p>Bottom details</p>
-        <p>Bottom details</p>
-    </div>
-    <div class="left" data-touch data-touch-controllers=".controlLeft, .overlay" data-touch-buddies=".burger1Left, .burger2Left, .burger3Left">
-        <button class="controlLeft" type="button">
-            <span class="hamburger">
-                <span class="burger1 burger1Left"></span>
-                <span class="burger2 burger2Left"></span>
-                <span class="burger3 burger3Left"></span>
-            </span>
-        </button>
-        <h1>Left</h1>
-        <p>Left details</p>
-        <p>Left details</p>
-        <p>Left details</p>
-    </div>
-    <div class="content">
-        <h1>Center content 2</h1>
-        <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Donec sed odio dui. Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Sed posuere consectetur est at lobortis.</p>
-        <p>Cras mattis consectetur purus sit amet fermentum. Donec sed odio dui. Donec ullamcorper nulla non metus auctor fringilla. Curabitur blandit tempus porttitor. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+    <div class="topbottomdrawers">
+        <h3>Slide in/out popup</h3>
+        <div class="demo">
+            <div class="article">
+                <h4>Slide-in popup</h4>
+                <p>Swiping away automatically slide-in popups.</p>
+            </div>
+            <div class="popup is-open" data-touch data-touch-controllers=".controlPopup">
+                <button class="controlPopup" type="button">Close</button>
+                <h1>Top</h1>
+                <p>Top details</p>
+                <p>Top details</p>
+                <p>Top details</p>
+            </div>
+        </div>
     </div>
 </div>
 
