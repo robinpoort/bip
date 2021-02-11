@@ -759,16 +759,23 @@
     // Add the transitioning class
     target.classList.add(settings.transitioningClass);
 
-    // Either toggle or reset
-    if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
-      toggle(target, settings, true);
-    } else {
-      resetStyle(target, settings, true);
-    }
-
     // Remove touchmove class from target
     target.classList.remove(settings.touchmoveClass);
     document.body.classList.remove('has-touchmove');
+
+    // Either toggle or reset
+    let isController = false;
+    if (event.target.closest(target.getAttribute(settings.controllers))) {
+     isController = true;
+    }
+    if (isController || (touchstartX !== touchendX || touchstartY !== touchendY)) {
+      if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
+        toggle(target, settings, true);
+      } else {
+        resetStyle(target, settings, true);
+      }
+    }
+
 
     // Emit event
     emitEvent('bipEndDrag', settings, {
