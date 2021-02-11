@@ -941,9 +941,7 @@
       }
 
       // Smoother transitions by using requestAnimationframe
-      window.requestAnimationFrame(function () {
-        transitionWithGesture(target, touchmoveX, touchmoveY, settings);
-      });
+      transitionWithGesture(target, touchmoveX, touchmoveY, settings);
     }
 
 
