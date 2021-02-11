@@ -18,7 +18,7 @@
 
   let supports = 'querySelector' in document && 'addEventListener' in window;
 
-
+    
   // Default variables
   // =================
   let defaults = {
@@ -66,6 +66,14 @@
     target = false;
     targetValues = [];
     buddies = [];
+  }
+
+
+  // forEach polyfill
+  // ================
+
+  if (window.NodeList && !NodeList.prototype.forEach) {
+    NodeList.prototype.forEach = Array.prototype.forEach;
   }
 
 
@@ -254,7 +262,7 @@
     let transitionValues = style[prop].split(', ');
     let value = 0;
     transition.split(', ').forEach(function(el, i) {
-      if (el.includes(type)) {
+      if (el.indexOf(type) !== -1) {
         value = parseFloat(transitionValues[i]) * 1000;
       }
     });
@@ -274,6 +282,10 @@
   // =============
 
   function isEquivalent(a, b) {
+
+    // Return false if object is not an object
+    if (Object.prototype.toString.call(1) !== '[object Object]') return false;
+
     // Create arrays of property names
     let aProps = Object.getOwnPropertyNames(a);
     let bProps = Object.getOwnPropertyNames(b);
@@ -472,7 +484,7 @@
       'from': transitionValues[settings.calculator].from,
       'to': transitionValues[settings.calculator].to
     };
-    if (settings.yAxis.includes(settings.calculator)) {
+    if (settings.yAxis.indexOf(settings.calculator) !== -1) {
       values.axis = 'y';
     }
     if (settings.calculator === 'translate') {
