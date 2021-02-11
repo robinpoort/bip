@@ -979,6 +979,37 @@
 
 
     /**
+     * Destroy
+     */
+
+    publicAPIs.destroy = function () {
+
+      // Remove eventlisteners
+      document.removeEventListener('touchstart', startHandler, true);
+      document.removeEventListener('touchmove', moveHandler, true);
+      document.removeEventListener('touchend', endHandler, true);
+      document.removeEventListener('mousedown', startHandler, true);
+      if (settings.clickDrag) { document.removeEventListener('mousemove', moveHandler, true); }
+      document.removeEventListener('mouseup', endHandler, true);
+
+      // Remove body classes
+      document.body.classList.remove('bip-busy', 'has-touchmove');
+
+      // Remove styling from all selectors
+      selectors.forEach(function(selector) {
+        selector.target.style.transition = 'none';
+        selector.target.classList.remove(settings.openClass, settings.touchmoveClass, settings.transitioningClass);
+        selector.target.removeAttribute('style');
+        document.querySelectorAll(selector.controls).forEach(function(control) {
+          control.style.transition = 'none';
+          control.classList.remove(settings.openClass);
+          control.removeAttribute('style');
+        });
+      })
+    };
+
+
+    /**
      * Init
      */
 

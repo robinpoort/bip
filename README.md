@@ -129,6 +129,14 @@ const bip = new Bip('[data-touch]');
 bip.toggle(document.querySelector('.selector');
 ```
 
+### destroy
+Destroys bip
+
+```js
+const bip = new Bip('[data-touch]');
+bip.destroy();
+```
+
 ## Events
 
 ### bipInit
