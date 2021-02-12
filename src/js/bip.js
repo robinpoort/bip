@@ -53,7 +53,6 @@
   let lastDifference = 0;
   let moveDirection = 'forward';
   let eventTarget = false;
-  let target = false;
   let targetValues = [];
   let buddies = [];
   let ignore = false;
@@ -63,10 +62,6 @@
   // ============
 
   function resetValues() {
-    touchstart = false;
-    lastDifference = false;
-    target = false;
-    targetValues = [];
     buddies = [];
   }
 
@@ -360,7 +355,6 @@
     if (type === 'getValues') {
       emitEvent('bipCalculateFrom', settings, {
         settings: settings,
-        target: target,
         fromValues: fromValues
       });
     }
@@ -377,7 +371,6 @@
     if (type === 'getValues') {
       emitEvent('bipCalculateTo', settings, {
         settings: settings,
-        target: target,
         fromValues: fromValues,
         toValues: toValues
       });
@@ -411,7 +404,7 @@
   // Get target
   // ==========
 
-  function getTarget(isControl, isSelector, settings) {
+  function getTarget(target, isControl, isSelector, settings) {
 
     // Controls
     let controls = [];
@@ -427,9 +420,7 @@
       })
 
       // Set target
-      if (isControl.length === 1) {
-        target = isControl[0].target;
-      } else if (controls.length === 1) {
+      if (controls.length === 1) {
         target = controls[0].target;
       } else {
         target = false
@@ -439,11 +430,6 @@
     // When target is a selector
     if (isSelector) {
       target = isSelector;
-    }
-
-    // Get buddies for target
-    if (target) {
-      buddies = getBuddies(target, settings) || false;
     }
 
     // When multiple targets are found, close all applicable targets
@@ -598,7 +584,7 @@
   // Set styling
   // ===========
 
-  function setStyling(element, values, settings, properties) {
+  function setStyling(element, values, target, settings, properties) {
     let transforms = [];
     let transitionProperties = [];
     let transitionDelays = [];
@@ -704,7 +690,7 @@
     buddies.forEach(function (buddy) {
       let count = (buddy.element.className.match(/openedby:/g) || []).length;
       if (count === 0 || (count === 1 && buddy.element.classList.contains('openedby:' + element.getAttribute(settings.id)))) {
-        setStyling(buddy.element, buddy, settings, 'all');
+        setStyling(buddy.element, buddy, element, settings, 'all');
       }
     });
   }
@@ -757,7 +743,7 @@
       buddies.forEach(function (buddy) {
         buddy.element.removeAttribute('style');
         if (setStyle) {
-          setStyling(buddy.element, buddy, settings, 'reset');
+          setStyling(buddy.element, buddy, target, settings, 'reset');
         }
       });
     }
@@ -843,6 +829,7 @@
     const publicAPIs = {};
     let selectors = [];
     let settings;
+    let target;
 
 
     // Start handler
@@ -880,29 +867,30 @@
       // Prevent default scrolling on touch devices
       event.preventDefault();
 
-      // Reset values for new touchstart event
-      resetValues();
-
-      // Movement variables
-      touchstartX = event.screenX || event.changedTouches[0].screenX;
-      touchstartY = event.screenY || event.changedTouches[0].screenY;
-
       // Set target
       // ==========
-      target = getTarget(isControl, isSelector, settings);
+      target = getTarget(target, isControl, isSelector, settings);
 
       // Return false if applicable
       if (!target) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
+
+      // Reset values for new touchstart event
+      resetValues();
 
       // Get target values
       targetValues = getValues(target, settings);
       if (!targetValues) return false;
 
       // Get buddies and values
+      buddies = getBuddies(target, settings) || false;
       buddies.forEach(function (buddy, i) {
         buddies[i] = (getTransitionValues(buddy, settings, 'buddyValues'));
       });
+
+      // Movement variables
+      touchstartX = event.screenX || event.changedTouches[0].screenX;
+      touchstartY = event.screenY || event.changedTouches[0].screenY;
 
       // Disable styling and disable user-select
       document.body.classList.add('bip-busy');
