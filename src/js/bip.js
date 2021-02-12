@@ -45,7 +45,6 @@
     emitEvents: true
   };
 
-  let touchevent = false;
   let touchstart = false;
   let touchstartX = 0;
   let touchstartY = 0;
@@ -766,7 +765,6 @@
     // Remove transitioning class when totalDuration is over
     setTimeout(function() {
       target.classList.remove(settings.transitioningClass);
-      touchevent = false;
       touchstart = false;
 
       // Emit event
@@ -826,20 +824,9 @@
         }
       });
 
-      // Return false if applicable
-      if (touchevent) return false;
-
       // Return false if target or closest is an ignore target
       ignore = !!eventTarget.closest('[' + settings.ignore + ']');
       if (ignore) return false;
-
-      // Recognize touchevent
-      if (event.type === 'touchstart') {
-        touchevent = true;
-      }
-
-      // Prevent default scrolling on touch devices
-      event.preventDefault();
 
       // Set target
       // ==========
@@ -848,6 +835,9 @@
       // Return false if applicable
       if (!target) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
+
+      // Prevent default scrolling on touch devices
+      event.preventDefault();
 
       // Reset values for new touchstart event
       resetValues();
