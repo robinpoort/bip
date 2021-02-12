@@ -26,6 +26,7 @@
     buddies: 'data-touch-buddies',
     controllers: 'data-touch-controllers',
     ignore: 'data-touch-ignore',
+    noswipe: 'data-touch-noswipe',
     id: 'data-touch-id',
     calculator: 'translate',
 
@@ -56,6 +57,7 @@
   let targetValues = [];
   let buddies = [];
   let ignore = false;
+  let noswipe = false;
 
 
   // Reset values
@@ -726,6 +728,7 @@
     // Variables
     const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
     const threshold = targetValues.difference * settings.threshold;
+    let go = true;
 
     // Add the transitioning class
     target.classList.add(settings.transitioningClass);
@@ -734,19 +737,23 @@
     target.classList.remove(settings.touchmoveClass);
     document.body.classList.remove('has-touchmove');
 
+    // CLick event?
+    if (noswipe && ((touchstartX !== touchendX || touchstartY !== touchendY))) {
+      go = false;
+    }
+
     // Either toggle or reset
     let isController = false;
     if (eventTarget.closest(target.getAttribute(settings.controllers))) {
       isController = true;
     }
-    if (isController || (touchstartX !== touchendX || touchstartY !== touchendY)) {
+    if (go && (isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
       if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
         toggle(target, settings, true);
       } else {
         resetStyle(target, settings, true);
       }
     }
-
 
     // Emit event
     emitEvent('bipEndDrag', settings, {
@@ -888,6 +895,9 @@
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
 
+      // Check if item is a noswipe item
+      noswipe = !!eventTarget.closest('[' + settings.noswipe + ']');
+
       // Prevent default scrolling on touch devices
       event.preventDefault();
 
@@ -927,7 +937,9 @@
       }
 
       // Smoother transitions by using requestAnimationframe
-      transitionWithGesture(target, touchmoveX, touchmoveY, settings);
+      if (!noswipe) {
+        transitionWithGesture(target, touchmoveX, touchmoveY, settings);
+      }
     }
 
 
