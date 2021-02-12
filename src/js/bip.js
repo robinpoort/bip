@@ -103,13 +103,13 @@
   // Emit event
   // ==========
 
-  function emitEvent(type, settings, details) {
+  function emitEvent(type, settings, target, details) {
     if (!settings.emitEvents || typeof window.CustomEvent !== 'function') return;
     let event = new CustomEvent(type, {
       bubbles: true,
       detail: details
     });
-    document.dispatchEvent(event);
+    target.dispatchEvent(event);
   }
 
 
@@ -321,7 +321,7 @@
 
     // Emit event
     if (type === 'getValues') {
-      emitEvent('bipCalculateFrom', settings, {
+      emitEvent('calculateFrom', settings, target, {
         settings: settings,
         target: target,
         fromValues: fromValues
@@ -338,7 +338,7 @@
 
     // Emit event
     if (type === 'getValues') {
-      emitEvent('bipCalculateTo', settings, {
+      emitEvent('calculateTo', settings, target, {
         settings: settings,
         target: target,
         fromValues: fromValues,
@@ -756,7 +756,7 @@
     }
 
     // Emit event
-    emitEvent('bipEndDrag', settings, {
+    emitEvent('endDrag', settings, target, {
       settings: settings,
       target: target,
       targetValues: targetValues,
@@ -770,7 +770,7 @@
       touchstart = false;
 
       // Emit event
-      emitEvent('bipEnd', settings, {
+      emitEvent('end', settings, target, {
         settings: settings,
         target: target,
         targetValues: targetValues,
@@ -798,7 +798,7 @@
    * Constructor
    */
 
-  return function(selector, options) {
+  const Constructor = function(selector, options) {
 
     // Unique Variables
     const publicAPIs = {};
@@ -825,10 +825,6 @@
           isControl.push(el);
         }
       });
-
-      // Return false if applicable
-      if (!isControl && !isSelector) return false;
-      if (touchevent) return false;
 
       // Return false if target or closest is an ignore target
       ignore = !!eventTarget.closest('[' + settings.ignore + ']');
@@ -875,7 +871,7 @@
       touchstart = true;
 
       // Emit event
-      emitEvent('bipStartDrag', settings, {
+      emitEvent('startDrag', settings, target, {
         settings: settings,
         target: target,
         targetValues: targetValues,
@@ -1057,9 +1053,11 @@
       document.addEventListener('mouseup', endHandler, false);
 
       // Emit event
-      emitEvent('bipInit', settings, {
-        settings: settings,
-        selectors: selectors
+      document.querySelectorAll(selector).forEach(function(el) {
+        emitEvent('init', settings, el, {
+          settings: settings,
+          selectors: selectors
+        });
       });
 
     }
@@ -1067,9 +1065,18 @@
     // Initialize the plugin
     publicAPIs.init(options);
 
+    // Events
+    publicAPIs.on = function (type, callback) {
+      document.querySelectorAll(selector).forEach(function(el) {
+        el.addEventListener(type, callback, false);
+      });
+    };
+
     // Return the public APIs
     return publicAPIs;
 
   };
+
+  return Constructor;
 
 });

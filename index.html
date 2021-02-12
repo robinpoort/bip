@@ -366,7 +366,7 @@
                 <h4>Top and bottom drawers</h4>
                 <p>Open and close by clicking buttons or swipe/drag.</p>
             </div>
-            <div class="overlay" data-touch-id="drawer-overlay" data-touch-noswipe></div>
+            <div class="overlay" data-touch-id="drawer-overlay"></div>
             <div class="top" data-touch data-touch-controllers=".controlTop, [data-touch-id=drawer-overlay]" data-touch-buddies=".arrow1top, .arrow2top">
                 <button class="controlTop" type="button">
                     <span class="arrow">
@@ -416,62 +416,28 @@
 <script type="text/javascript">
     const bip = new Bip('[data-touch]');
 
-    // const bip2 = new Bip('.top', {
-    //     calculator: 'translate'
-    // });
+    // const bip2 = new Bip('.top');
     //
-    // document.querySelector('.overlay').onclick = function() {
-    //     console.log('test');
-    //     bip.destroy();
-    // }
+    // const bip3 = new Bip('.bottom');
 
-
-    // const bip3 = new Bip('.bottom', {
-    //     // cssValues: ['opacity', 'width']
+    // bip.on('init', function(e) {
+    //     console.log(e);
+    // })
+    // bip.on('calculateFrom', function(e) {
+    //     console.log(e);
+    // })
+    // bip.on('calculateTo', function(e) {
+    //     console.log(e);
+    // })
+    // bip.on('startDrag', function(e) {
+    //     console.log(e);
     // });
-
-    // const bip4 = new Bip('.right', {
-    //     // cssValues: ['opacity', 'width']
+    // bip.on('endDrag', function(e) {
+    //     console.log(e);
     // });
-
-    // console.log(bip);
-
-    // bip.toggle(document.querySelector('[data-touch-id="right"'));
-    //
-    // function checkSetHeight(e) {
-    //     e.target.classList.add('heightCheck');
-    //     var style = document.createElement('style');
-    //     var ref = document.querySelector('script');
-    //     var value = e.target.classList.contains('is-open') ? e.fromValues.height.value : e.toValues.height.value;
-    //     style.innerHTML = '.heightCheck { height: ' + value + 'px; }';
-    //     style.id = 'addClass';
-    //     ref.parentNode.insertBefore(style, ref);
-    // }
-
-    // document.addEventListener('bipInit', function (e) {
-    //     console.log('bipInit');
-    // }, false);
-    // document.addEventListener('bipCalculateFrom', function (e) {
-    //   console.log('Calculate from', e.detail);
-    // }, false);
-    // document.addEventListener('bipCalculateTo', function (e) {
-    //     console.log('Calculate to', e.detail);
-    //   // checkSetHeight(e.detail);
-    // }, false);
-    // document.addEventListener('bipStartDrag', function (e) {
-    //     console.log('Start drag', e.detail);
-    // }, false);
-    // document.addEventListener('bipMove', function (e) {
-    //     console.log('Move', e.detail);
-    // }, false);
-    // document.addEventListener('bipEndDrag', function (e) {
-    //     console.log('End drag', e.detail);
-    // }, false);
-    // document.addEventListener('bipEnd', function (e) {
-    //     console.log('End', e.detail);
-    //     // var el = document.getElementById('addClass');
-    //     // el.parentNode.removeChild(el);
-    // }, false);
+    // bip.on('end', function(e) {
+    //     console.log(e);
+    // });
 
 </script>
 </body>
