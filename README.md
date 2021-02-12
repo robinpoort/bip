@@ -82,6 +82,9 @@ Data attribute name for controller(s) (default: `data-touch-controllers`)
 ### ignore
 Data attribute name for ignore elements (default: `data-touch-ignore`)
 
+### noswipe
+Data attribute name for noswipe elements. Clicking these elements will still trigger toggle. (default: `data-touch-noswipe`)
+
 ### calculator
 The property that is being used to calculate 'from' and 'to' of target element (default: `'translate'`).
 

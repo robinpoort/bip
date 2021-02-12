@@ -26,6 +26,8 @@
     buddies: 'data-touch-buddies',
     controllers: 'data-touch-controllers',
     ignore: 'data-touch-ignore',
+    noswipe: 'data-touch-noswipe',
+    id: 'data-touch-id',
     calculator: 'translate',
 
     threshold: 0.2,
@@ -52,20 +54,16 @@
   let lastDifference = 0;
   let moveDirection = 'forward';
   let eventTarget = false;
-  let target = false;
   let targetValues = [];
   let buddies = [];
   let ignore = false;
+  let noswipe = false;
 
 
   // Reset values
   // ============
 
   function resetValues() {
-    touchstart = false;
-    lastDifference = false;
-    target = false;
-    targetValues = [];
     buddies = [];
   }
 
@@ -105,13 +103,13 @@
   // Emit event
   // ==========
 
-  function emitEvent(type, settings, details) {
+  function emitEvent(type, settings, target, details) {
     if (!settings.emitEvents || typeof window.CustomEvent !== 'function') return;
     let event = new CustomEvent(type, {
       bubbles: true,
       detail: details
     });
-    document.dispatchEvent(event);
+    target.dispatchEvent(event);
   }
 
 
@@ -279,40 +277,6 @@
   }
 
 
-  // Is equivalent
-  // =============
-
-  function isEquivalent(a, b) {
-
-    // Return false if object is not an object
-    if (Object.prototype.toString.call(1) !== '[object Object]') return false;
-
-    // Create arrays of property names
-    let aProps = Object.getOwnPropertyNames(a);
-    let bProps = Object.getOwnPropertyNames(b);
-
-    // If number of properties is different,
-    // objects are not equivalent
-    if (aProps.length !== bProps.length) {
-      return false;
-    }
-
-    for (let i = 0; i < aProps.length; i++) {
-      let propName = aProps[i];
-
-      // If values of same property are not equal,
-      // objects are not equivalent
-      if (a[propName] !== b[propName]) {
-        return false;
-      }
-    }
-
-    // If we made it this far, objects
-    // are considered equivalent
-    return true;
-  }
-
-
   // Get calculations
   // ================
 
@@ -342,7 +306,7 @@
   // Get transition values
   // =====================
 
-  function getTransitionValues(element, settings, type) {
+  function getTransitionValues(element, target, settings, type) {
 
     // Variables
     let fromValues = {};
@@ -357,7 +321,7 @@
 
     // Emit event
     if (type === 'getValues') {
-      emitEvent('bipCalculateFrom', settings, {
+      emitEvent('calculateFrom', settings, target, {
         settings: settings,
         target: target,
         fromValues: fromValues
@@ -374,7 +338,7 @@
 
     // Emit event
     if (type === 'getValues') {
-      emitEvent('bipCalculateTo', settings, {
+      emitEvent('calculateTo', settings, target, {
         settings: settings,
         target: target,
         fromValues: fromValues,
@@ -387,16 +351,14 @@
 
     // Add properties and values to the object
     settings.matrixValues.forEach(function(el) {
-      if (!isEquivalent(fromValues[el], toValues[el])) {
-        const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
-        if (elCalculations) {
-          returnValues[el] = elCalculations
-        }
+      const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
+      if (elCalculations) {
+        returnValues[el] = elCalculations
       }
     });
     settings.cssValues.forEach(function(el) {
-      if (!isEquivalent(fromValues[el], toValues[el])) {
-        const elCalculations = getCalculations(fromValues[el], toValues[el], 1)
+      if (fromValues[el].value !== toValues[el].value) {
+        const elCalculations = getCalculations(fromValues[el], toValues[el], 1);
         if (elCalculations) {
           returnValues[el] = elCalculations
         }
@@ -410,35 +372,42 @@
   // Get target
   // ==========
 
-  function getTarget(isControl, isSelector, settings) {
+  function getTarget(target, isControl, isSelector, settings) {
+
+    // Controls
+    let controls = [];
+
+    // When target is a controller
+    if (isControl) {
+
+      // Get controls amount
+      isControl.forEach(function(ctrl) {
+        if (ctrl.target.classList.contains(settings.openClass)) {
+          controls.push(ctrl);
+        }
+      })
+
+      // Set target
+      if (controls.length === 1) {
+        target = controls[0].target;
+      } else if (isControl.length === 1) {
+        target = isControl[0].target;
+      } else {
+        target = false
+      }
+    }
 
     // When target is a selector
     if (isSelector) {
       target = isSelector;
     }
 
-    // When target is a controller
-    if (isControl) {
-      let count = (isControl.controls.className.match(/openedby:/g) || []);
-      if (count.length === 1) {
-        target = isControl.target;
-      } else {
-        target = false;
-      }
-    }
-
-    // Get buddies for target
-    if (target) {
-      buddies = getBuddies(target, settings) || false;
-    }
-
     // When multiple targets are found, close all applicable targets
     if (!target) {
-      isControl.controls.classList.forEach(function(cls) {
-        if (cls.match(/openedby:/g)) {
-          const el = document.querySelector('[' + settings.id + '="'+cls.split(':')[1]+'"]');
+      controls.forEach(function(ctrl) {
+        if (ctrl.target.classList.contains(settings.openClass)) {
           buddies = [];
-          toggle(el, settings, false);
+          toggle(ctrl.target, settings, false);
         }
       })
     }
@@ -473,6 +442,7 @@
       });
     }
 
+
     return buddies;
   }
 
@@ -506,7 +476,7 @@
   function getValues(target, settings) {
 
     // Get transitionvalues
-    const transitionValues = getTransitionValues(target, settings, 'getValues');
+    const transitionValues = getTransitionValues(target, target, settings, 'getValues');
 
     // Return false if calculator styling is not found
     if (!transitionValues[settings.calculator]) return false;
@@ -543,7 +513,7 @@
 
   function calculateMultiplier(value) {
     let totalDuration = targetValues.totalDuration;
-    let factor = (targetValues.axis === 'x' ? (targetValues.movedX / (targetValues.difference / 100)) : (targetValues.movedY / (targetValues.difference / 100))) / 100;
+    let factor = (targetValues.axis === 'x' ? ((targetValues.movedX || 0) / (targetValues.difference / 100)) : ((targetValues.movedY || 0) / (targetValues.difference / 100))) / 100;
     let delay = parseInt(value.delay === 0 ? targetValues.delay : value.delay);
     let duration = parseInt(value.duration === 0 ? targetValues.duration : value.duration);
     let delayFactor = delay/totalDuration;
@@ -584,7 +554,7 @@
   // Set styling
   // ===========
 
-  function setStyling(element, values, settings, properties) {
+  function setStyling(element, values, target, settings, properties) {
     let transforms = [];
     let transitionProperties = [];
     let transitionDelays = [];
@@ -596,7 +566,7 @@
     // Set transition properties
     // -------------------------
 
-    function setTransitionProperties(prop, type) {
+    function setTransitionProperties(prop, type, multiplierRoot) {
       transitionProperties.push(prop);
       transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
       transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
@@ -635,7 +605,7 @@
 
     // Set transition properties
     else {
-      setTransitionProperties('transform', 'translate');
+      setTransitionProperties('transform', 'translate', multiplierRoot);
     }
 
     // Loop through CSS values
@@ -654,7 +624,7 @@
               element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
             }
           } else {
-            setTransitionProperties(prop, prop);
+            setTransitionProperties(prop, prop, multiplierRoot);
           }
         }
       }
@@ -679,8 +649,8 @@
   function transitionWithGesture(element, touchmoveX, touchmoveY, settings) {
 
     // Calculate movedX and movedY
-    let movedX = Math.abs(touchmoveX - touchstartX);
-    let movedY = Math.abs(touchmoveY - touchstartY);
+    let movedX = Math.abs(touchmoveX - touchstartX) || 0;
+    let movedY = Math.abs(touchmoveY - touchstartY) || 0;
 
     // Add movedX and movedY to targetValues
     targetValues.movedX = movedX;
@@ -690,7 +660,7 @@
     buddies.forEach(function (buddy) {
       let count = (buddy.element.className.match(/openedby:/g) || []).length;
       if (count === 0 || (count === 1 && buddy.element.classList.contains('openedby:' + element.getAttribute(settings.id)))) {
-        setStyling(buddy.element, buddy, settings, 'all');
+        setStyling(buddy.element, buddy, element, settings, 'all');
       }
     });
   }
@@ -701,9 +671,11 @@
 
   function toggle(target, settings, setStyle) {
 
-    // Get buddies if non are defined
     if (buddies.length === 0) {
       buddies = getBuddies(target, settings);
+      buddies.forEach(function (buddy, i) {
+        buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
+      });
     }
 
     // Reset target (and buddies)
@@ -741,7 +713,7 @@
       buddies.forEach(function (buddy) {
         buddy.element.removeAttribute('style');
         if (setStyle) {
-          setStyling(buddy.element, buddy, settings, 'reset');
+          setStyling(buddy.element, buddy, target, settings, 'reset');
         }
       });
     }
@@ -756,6 +728,7 @@
     // Variables
     const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
     const threshold = targetValues.difference * settings.threshold;
+    let go = true;
 
     // Add the transitioning class
     target.classList.add(settings.transitioningClass);
@@ -764,12 +737,17 @@
     target.classList.remove(settings.touchmoveClass);
     document.body.classList.remove('has-touchmove');
 
+    // CLick event?
+    if (noswipe && ((touchstartX !== touchendX || touchstartY !== touchendY))) {
+      go = false;
+    }
+
     // Either toggle or reset
     let isController = false;
     if (eventTarget.closest(target.getAttribute(settings.controllers))) {
       isController = true;
     }
-    if (isController || (touchstartX !== touchendX || touchstartY !== touchendY)) {
+    if (go && (isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
       if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
         toggle(target, settings, true);
       } else {
@@ -777,9 +755,8 @@
       }
     }
 
-
     // Emit event
-    emitEvent('bipEndDrag', settings, {
+    emitEvent('endDrag', settings, target, {
       settings: settings,
       target: target,
       targetValues: targetValues,
@@ -793,7 +770,7 @@
       touchstart = false;
 
       // Emit event
-      emitEvent('bipEnd', settings, {
+      emitEvent('end', settings, target, {
         settings: settings,
         target: target,
         targetValues: targetValues,
@@ -821,12 +798,13 @@
    * Constructor
    */
 
-  return function(selector, options) {
+  const Constructor = function(selector, options) {
 
     // Unique Variables
     const publicAPIs = {};
     let selectors = [];
     let settings;
+    let target;
 
 
     // Start handler
@@ -838,22 +816,15 @@
       eventTarget = event.target;
 
       // Targets
-      let isControl = false;
+      let isControl = [];
       let isSelector = eventTarget.closest(selector) || false;
 
       // See if element is a "close" target
-      selectors.forEach(function(el, i) {
-        if (eventTarget.closest(el.controls) && eventTarget.closest(el.controls).classList.contains('openedby:' + selector.replace(/\W/g, '') + i)) {
-          isControl = {
-            'controls': eventTarget.closest(el.controls),
-            'target': el.target
-          };
+      selectors.forEach(function(el) {
+        if (eventTarget.closest(el.controls)) {
+          isControl.push(el);
         }
       });
-
-      // Return false if applicable
-      if (!isControl && !isSelector) return false;
-      if (touchevent) return false;
 
       // Return false if target or closest is an ignore target
       ignore = !!eventTarget.closest('[' + settings.ignore + ']');
@@ -867,29 +838,30 @@
       // Prevent default scrolling on touch devices
       event.preventDefault();
 
-      // Reset values for new touchstart event
-      resetValues();
-
-      // Movement variables
-      touchstartX = event.screenX || event.changedTouches[0].screenX;
-      touchstartY = event.screenY || event.changedTouches[0].screenY;
-
       // Set target
       // ==========
-      target = getTarget(isControl, isSelector, settings);
+      target = getTarget(target, isControl, isSelector, settings);
 
       // Return false if applicable
       if (!target) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
+
+      // Reset values for new touchstart event
+      resetValues();
 
       // Get target values
       targetValues = getValues(target, settings);
       if (!targetValues) return false;
 
       // Get buddies and values
+      buddies = getBuddies(target, settings) || false;
       buddies.forEach(function (buddy, i) {
-        buddies[i] = (getTransitionValues(buddy, settings, 'buddyValues'));
+        buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
       });
+
+      // Movement variables
+      touchstartX = event.screenX || event.changedTouches[0].screenX;
+      touchstartY = event.screenY || event.changedTouches[0].screenY;
 
       // Disable styling and disable user-select
       document.body.classList.add('bip-busy');
@@ -899,7 +871,7 @@
       touchstart = true;
 
       // Emit event
-      emitEvent('bipStartDrag', settings, {
+      emitEvent('startDrag', settings, target, {
         settings: settings,
         target: target,
         targetValues: targetValues,
@@ -918,6 +890,9 @@
       if (!target) return false;
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
+
+      // Check if item is a noswipe item
+      noswipe = !!eventTarget.closest('[' + settings.noswipe + ']');
 
       // Prevent default scrolling on touch devices
       event.preventDefault();
@@ -958,7 +933,9 @@
       }
 
       // Smoother transitions by using requestAnimationframe
-      transitionWithGesture(target, touchmoveX, touchmoveY, settings);
+      if (!noswipe) {
+        transitionWithGesture(target, touchmoveX, touchmoveY, settings);
+      }
     }
 
 
@@ -977,8 +954,13 @@
       if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Variables
-      touchendX = event.screenX || event.changedTouches[0].screenX;
-      touchendY = event.screenY || event.changedTouches[0].screenY;
+      if (event.type === 'touchend') {
+        touchendX = event.changedTouches[0].screenX;
+        touchendY = event.changedTouches[0].screenY;
+      } else {
+        touchendX = event.screenX;
+        touchendY = event.screenY;
+      }
 
       // Handle touch gesture
       handleGesture(event, target, moveDirection, settings);
@@ -1071,9 +1053,11 @@
       document.addEventListener('mouseup', endHandler, false);
 
       // Emit event
-      emitEvent('bipInit', settings, {
-        settings: settings,
-        selectors: selectors
+      document.querySelectorAll(selector).forEach(function(el) {
+        emitEvent('init', settings, el, {
+          settings: settings,
+          selectors: selectors
+        });
       });
 
     }
@@ -1081,9 +1065,18 @@
     // Initialize the plugin
     publicAPIs.init(options);
 
+    // Events
+    publicAPIs.on = function (type, callback) {
+      document.querySelectorAll(selector).forEach(function(el) {
+        el.addEventListener(type, callback, false);
+      });
+    };
+
     // Return the public APIs
     return publicAPIs;
 
   };
+
+  return Constructor;
 
 });
