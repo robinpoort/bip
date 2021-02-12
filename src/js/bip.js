@@ -767,7 +767,7 @@
     // Either toggle or reset
     let isController = false;
     if (eventTarget.closest(target.getAttribute(settings.controllers))) {
-     isController = true;
+      isController = true;
     }
     if (isController || (touchstartX !== touchendX || touchstartY !== touchendY)) {
       if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
