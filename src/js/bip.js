@@ -338,7 +338,7 @@
   // Get transition values
   // =====================
 
-  function getTransitionValues(element, settings, type) {
+  function getTransitionValues(element, target, settings, type) {
 
     // Variables
     let fromValues = {};
@@ -355,6 +355,7 @@
     if (type === 'getValues') {
       emitEvent('bipCalculateFrom', settings, {
         settings: settings,
+        target: target,
         fromValues: fromValues
       });
     }
@@ -371,6 +372,7 @@
     if (type === 'getValues') {
       emitEvent('bipCalculateTo', settings, {
         settings: settings,
+        target: target,
         fromValues: fromValues,
         toValues: toValues
       });
@@ -508,7 +510,7 @@
   function getValues(target, settings) {
 
     // Get transitionvalues
-    const transitionValues = getTransitionValues(target, settings, 'getValues');
+    const transitionValues = getTransitionValues(target, target, settings, 'getValues');
 
     // Return false if calculator styling is not found
     if (!transitionValues[settings.calculator]) return false;
@@ -706,7 +708,7 @@
     if (buddies.length === 0) {
       buddies = getBuddies(target, settings);
       buddies.forEach(function (buddy, i) {
-        buddies[i] = (getTransitionValues(buddy, settings, 'buddyValues'));
+        buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
       });
     }
 
@@ -887,7 +889,7 @@
       // Get buddies and values
       buddies = getBuddies(target, settings) || false;
       buddies.forEach(function (buddy, i) {
-        buddies[i] = (getTransitionValues(buddy, settings, 'buddyValues'));
+        buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
       });
 
       // Movement variables
