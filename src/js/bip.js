@@ -51,6 +51,7 @@
   let touchendY = 0;
   let lastDifference = 0;
   let moveDirection = 'forward';
+  let eventTarget = false;
   let target = false;
   let targetValues = [];
   let buddies = [];
@@ -765,7 +766,7 @@
 
     // Either toggle or reset
     let isController = false;
-    if (event.target.closest(target.getAttribute(settings.controllers))) {
+    if (eventTarget.closest(target.getAttribute(settings.controllers))) {
      isController = true;
     }
     if (isController || (touchstartX !== touchendX || touchstartY !== touchendY)) {
@@ -833,15 +834,18 @@
 
     function startHandler(event) {
 
+      // Set eventTarget
+      eventTarget = event.target;
+
       // Targets
       let isControl = false;
-      let isSelector = event.target.closest(selector) || false;
+      let isSelector = eventTarget.closest(selector) || false;
 
       // See if element is a "close" target
       selectors.forEach(function(el, i) {
-        if (event.target.closest(el.controls) && event.target.closest(el.controls).classList.contains('openedby:' + selector.replace(/\W/g, '') + i)) {
+        if (eventTarget.closest(el.controls) && eventTarget.closest(el.controls).classList.contains('openedby:' + selector.replace(/\W/g, '') + i)) {
           isControl = {
-            'controls': event.target.closest(el.controls),
+            'controls': eventTarget.closest(el.controls),
             'target': el.target
           };
         }
@@ -852,7 +856,7 @@
       if (touchevent) return false;
 
       // Return false if target or closest is an ignore target
-      ignore = !!event.target.closest('[' + settings.ignore + ']');
+      ignore = !!eventTarget.closest('[' + settings.ignore + ']');
       if (ignore) return false;
 
       // Recognize touchevent
