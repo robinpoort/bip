@@ -275,40 +275,6 @@
   }
 
 
-  // Is equivalent
-  // =============
-
-  function isEquivalent(a, b) {
-
-    // Return false if object is not an object
-    if (Object.prototype.toString.call(1) !== '[object Object]') return false;
-
-    // Create arrays of property names
-    let aProps = Object.getOwnPropertyNames(a);
-    let bProps = Object.getOwnPropertyNames(b);
-
-    // If number of properties is different,
-    // objects are not equivalent
-    if (aProps.length !== bProps.length) {
-      return false;
-    }
-
-    for (let i = 0; i < aProps.length; i++) {
-      let propName = aProps[i];
-
-      // If values of same property are not equal,
-      // objects are not equivalent
-      if (a[propName] !== b[propName]) {
-        return false;
-      }
-    }
-
-    // If we made it this far, objects
-    // are considered equivalent
-    return true;
-  }
-
-
   // Get calculations
   // ================
 
@@ -383,16 +349,14 @@
 
     // Add properties and values to the object
     settings.matrixValues.forEach(function(el) {
-      if (!isEquivalent(fromValues[el], toValues[el])) {
-        const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
-        if (elCalculations) {
-          returnValues[el] = elCalculations
-        }
+      const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
+      if (elCalculations) {
+        returnValues[el] = elCalculations
       }
     });
     settings.cssValues.forEach(function(el) {
-      if (!isEquivalent(fromValues[el], toValues[el])) {
-        const elCalculations = getCalculations(fromValues[el], toValues[el], 1)
+      if (fromValues[el].value !== toValues[el].value) {
+        const elCalculations = getCalculations(fromValues[el], toValues[el], 1);
         if (elCalculations) {
           returnValues[el] = elCalculations
         }
