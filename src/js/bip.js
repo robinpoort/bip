@@ -26,6 +26,7 @@
     buddies: 'data-touch-buddies',
     controllers: 'data-touch-controllers',
     ignore: 'data-touch-ignore',
+    id: 'data-touch-id',
     calculator: 'translate',
 
     threshold: 0.2,
@@ -412,19 +413,32 @@
 
   function getTarget(isControl, isSelector, settings) {
 
-    // When target is a selector
-    if (isSelector) {
-      target = isSelector;
-    }
+    // Controls
+    let controls = [];
 
     // When target is a controller
     if (isControl) {
-      let count = (isControl.controls.className.match(/openedby:/g) || []);
-      if (count.length === 1) {
-        target = isControl.target;
+
+      // Get controls amount
+      isControl.forEach(function(ctrl) {
+        if (ctrl.target.classList.contains(settings.openClass)) {
+          controls.push(ctrl);
+        }
+      })
+
+      // Set target
+      if (isControl.length === 1) {
+        target = isControl[0].target;
+      } else if (controls.length === 1) {
+        target = controls[0].target;
       } else {
-        target = false;
+        target = false
       }
+    }
+
+    // When target is a selector
+    if (isSelector) {
+      target = isSelector;
     }
 
     // Get buddies for target
@@ -434,11 +448,10 @@
 
     // When multiple targets are found, close all applicable targets
     if (!target) {
-      isControl.controls.classList.forEach(function(cls) {
-        if (cls.match(/openedby:/g)) {
-          const el = document.querySelector('[' + settings.id + '="'+cls.split(':')[1]+'"]');
+      controls.forEach(function(ctrl) {
+        if (ctrl.target.classList.contains(settings.openClass)) {
           buddies = [];
-          toggle(el, settings, false);
+          toggle(ctrl.target, settings, false);
         }
       })
     }
@@ -472,6 +485,7 @@
         buddies.push(buddy);
       });
     }
+
 
     return buddies;
   }
@@ -701,9 +715,11 @@
 
   function toggle(target, settings, setStyle) {
 
-    // Get buddies if non are defined
     if (buddies.length === 0) {
       buddies = getBuddies(target, settings);
+      buddies.forEach(function (buddy, i) {
+        buddies[i] = (getTransitionValues(buddy, settings, 'buddyValues'));
+      });
     }
 
     // Reset target (and buddies)
@@ -838,16 +854,13 @@
       eventTarget = event.target;
 
       // Targets
-      let isControl = false;
+      let isControl = [];
       let isSelector = eventTarget.closest(selector) || false;
 
       // See if element is a "close" target
-      selectors.forEach(function(el, i) {
-        if (eventTarget.closest(el.controls) && eventTarget.closest(el.controls).classList.contains('openedby:' + selector.replace(/\W/g, '') + i)) {
-          isControl = {
-            'controls': eventTarget.closest(el.controls),
-            'target': el.target
-          };
+      selectors.forEach(function(el) {
+        if (eventTarget.closest(el.controls)) {
+          isControl.push(el);
         }
       });
 
@@ -977,8 +990,13 @@
       if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Variables
-      touchendX = event.screenX || event.changedTouches[0].screenX;
-      touchendY = event.screenY || event.changedTouches[0].screenY;
+      if (event.type === 'touchend') {
+        touchendX = event.changedTouches[0].screenX;
+        touchendY = event.changedTouches[0].screenY;
+      } else {
+        touchendX = event.screenX;
+        touchendY = event.screenY;
+      }
 
       // Handle touch gesture
       handleGesture(event, target, moveDirection, settings);

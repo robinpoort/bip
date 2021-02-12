@@ -35,6 +35,7 @@
         height: 100%;
         background: rgba(0, 0, 0, .6);
         opacity: 0;
+        transform: scale(1);
         transition: opacity 300ms linear;
         pointer-events: none;
         touch-action: none;
@@ -44,7 +45,7 @@
 
     .overlay.is-open {
         opacity: 1;
-        /*transform: scale(.5);*/
+        transform: scale(.5);
         cursor: pointer;
         pointer-events: initial;
         touch-action: initial;
@@ -330,14 +331,14 @@
                 <p>Open and close by clicking buttons or swipe/drag.</p>
             </div>
             <div class="overlay" data-touch-id="sidemenu-overlay"></div>
+            <button class="controlRight" type="button">
+                <span class="hamburger">
+                    <span class="burger1 burger1Right"></span>
+                    <span class="burger2 burger2Right"></span>
+                    <span class="burger3 burger3Right"></span>
+                </span>
+            </button>
             <div class="right" data-touch data-touch-controllers=".controlRight, [data-touch-id=sidemenu-overlay]" data-touch-buddies=".burger1Right, .burger2Right, .burger3Right">
-                <button class="controlRight" type="button">
-                    <span class="hamburger">
-                        <span class="burger1 burger1Right"></span>
-                        <span class="burger2 burger2Right"></span>
-                        <span class="burger3 burger3Right"></span>
-                    </span>
-                </button>
                 <h1>Right</h1>
                 <p>Right details</p>
                 <p>Right details</p>
