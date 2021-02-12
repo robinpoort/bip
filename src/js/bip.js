@@ -557,7 +557,7 @@
 
   function calculateMultiplier(value) {
     let totalDuration = targetValues.totalDuration;
-    let factor = (targetValues.axis === 'x' ? (targetValues.movedX / (targetValues.difference / 100)) : (targetValues.movedY / (targetValues.difference / 100))) / 100;
+    let factor = (targetValues.axis === 'x' ? ((targetValues.movedX || 0) / (targetValues.difference / 100)) : ((targetValues.movedY || 0) / (targetValues.difference / 100))) / 100;
     let delay = parseInt(value.delay === 0 ? targetValues.delay : value.delay);
     let duration = parseInt(value.duration === 0 ? targetValues.duration : value.duration);
     let delayFactor = delay/totalDuration;
@@ -610,7 +610,7 @@
     // Set transition properties
     // -------------------------
 
-    function setTransitionProperties(prop, type) {
+    function setTransitionProperties(prop, type, multiplierRoot) {
       transitionProperties.push(prop);
       transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
       transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
@@ -649,7 +649,7 @@
 
     // Set transition properties
     else {
-      setTransitionProperties('transform', 'translate');
+      setTransitionProperties('transform', 'translate', multiplierRoot);
     }
 
     // Loop through CSS values
@@ -668,7 +668,7 @@
               element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
             }
           } else {
-            setTransitionProperties(prop, prop);
+            setTransitionProperties(prop, prop, multiplierRoot);
           }
         }
       }
@@ -693,8 +693,8 @@
   function transitionWithGesture(element, touchmoveX, touchmoveY, settings) {
 
     // Calculate movedX and movedY
-    let movedX = Math.abs(touchmoveX - touchstartX);
-    let movedY = Math.abs(touchmoveY - touchstartY);
+    let movedX = Math.abs(touchmoveX - touchstartX) || 0;
+    let movedY = Math.abs(touchmoveY - touchstartY) || 0;
 
     // Add movedX and movedY to targetValues
     targetValues.movedX = movedX;
