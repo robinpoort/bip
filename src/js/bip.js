@@ -422,6 +422,8 @@
       // Set target
       if (controls.length === 1) {
         target = controls[0].target;
+      } else if (isControl.length === 1) {
+        target = isControl[0].target;
       } else {
         target = false
       }
