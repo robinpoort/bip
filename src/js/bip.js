@@ -826,6 +826,9 @@
         }
       });
 
+      // Return false if applicable
+      if (touchevent) return false;
+
       // Return false if target or closest is an ignore target
       ignore = !!eventTarget.closest('[' + settings.ignore + ']');
       if (ignore) return false;
