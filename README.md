@@ -149,56 +149,56 @@ bip.destroy();
 
 ## Events
 
-### bipInit
+### init
 fired when initiated. Access to: settings, selectors
 
 ```js
-document.addEventListener('bipInit', function (e) {
+bip.on('init', function (e) {
     console.log('bipInit', e.detail);
-}, false);
+});
 ```
 
-### bipCalculateFrom
+### calculateFrom
 fired when target "from" values have been read. Access to: settings, target, fromValues
 
 ```js
-document.addEventListener('bipInit', function (e) {
-    console.log('bipCalculateFrom', e.detail);
+bip.on('bipInit', function (e) {
+    console.log('calculateFrom', e.detail);
 }, false);
 ```
 
-### bipCalculateTo
+### calculateTo
 fired when target "to" values have been read. Access to: settings, target, fromValues, toValues
 
 ```js
-document.addEventListener('bipCalculateTo', function (e) {
+bip.on('calculateTo', function (e) {
     console.log('bipCalculateFrom', e.detail);
 }, false);
 ```
 
-### bipStartDrag
+### startDrag
 fired when start swipe/drag. Access to: settings, target, targetValues, buddies
 
 ```js
-document.addEventListener('bipStartDrag', function (e) {
+bip.on('startDrag', function (e) {
     console.log('bipCalculateFrom', e.detail);
 }, false);
 ```
 
-### bipEndDrag
+### endDrag
 fired when end swipe/drag. Access to: settings, target, targetValues, buddies
 
 ```js
-document.addEventListener('bipEndDrag', function (e) {
+bip.on('endDrag', function (e) {
     console.log('bipCalculateFrom', e.detail);
 }, false);
 ```
 
-### bipEnd
+### end
 fired when complete transition is done. Access to: settings, target, targetValues, buddies
 
 ```js
-document.addEventListener('bipEnd', function (e) {
+bip.on('end', function (e) {
     console.log('bipCalculateFrom', e.detail);
 }, false);
 ```
