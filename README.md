@@ -118,6 +118,12 @@ Calculator elements where the axis is always 'y'. (default: `['top', 'bottom', '
 ### clickDrag
 Enables clickdrag on none touch devices. (default: `true`)
 
+### swipeOnly
+Disable clicks. Only swipe (or drag) will work. (default: `false`)
+
+### clickOnly
+Disable swipes. Only click will work. (default: `false`)
+
 ### emitEvents
 Whether to emit events or not. (default: `true`)
 

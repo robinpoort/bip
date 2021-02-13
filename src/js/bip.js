@@ -28,11 +28,12 @@
     ignore: 'data-touch-ignore',
     noswipe: 'data-touch-noswipe',
     id: 'data-touch-id',
-    calculator: 'translate',
 
+    calculator: 'translate',
     threshold: 0.2,
     difference: 10,
     maxEndDuration: 500,
+
     openClass: 'is-open',
     touchmoveClass: 'is-touchmove',
     transitioningClass: 'is-transitioning',
@@ -42,6 +43,9 @@
     yAxis: ['top', 'bottom', 'height', 'margin-top', 'margin-bottom', 'padding-top', 'padding-bottom'],
 
     clickDrag: true,
+    swipeOnly: false,
+    clickOnly: false,
+
     emitEvents: true
   };
 
@@ -727,6 +731,7 @@
     // Variables
     const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
     const threshold = targetValues.difference * settings.threshold;
+    let click = ((touchstartX === touchendX && touchstartY === touchendY));
     let go = true;
 
     // Add the transitioning class
@@ -736,10 +741,10 @@
     target.classList.remove(settings.touchmoveClass);
     document.body.classList.remove('has-touchmove');
 
-    // CLick event?
-    if (noswipe && ((touchstartX !== touchendX || touchstartY !== touchendY))) {
-      go = false;
-    }
+    // Set "go" variable depending on settings
+    if (click && settings.swipeOnly) { go = false; }
+    if (!click && settings.clickOnly) { go = false; }
+    if (noswipe && ((touchstartX !== touchendX || touchstartY !== touchendY))) { go = false; }
 
     // Either toggle or reset
     let isController = false;
@@ -858,7 +863,9 @@
 
       // Disable styling and disable user-select
       document.body.classList.add('bip-busy');
-      target.classList.add(settings.touchmoveClass);
+      if (!settings.clickOnly) {
+        target.classList.add(settings.touchmoveClass);
+      }
 
       // Set touchstart to true
       touchstart = true;
@@ -976,10 +983,10 @@
 
       // Remove eventlisteners
       document.removeEventListener('touchstart', startHandler, false);
-      document.removeEventListener('touchmove', moveHandler, false);
+      if (!settings.clickOnly) { document.removeEventListener('touchmove', moveHandler, false); }
       document.removeEventListener('touchend', endHandler, false);
       document.removeEventListener('mousedown', startHandler, false);
-      if (settings.clickDrag) { document.removeEventListener('mousemove', moveHandler, false); }
+      if (settings.clickDrag && !settings.clickOnly) {  document.removeEventListener('mousemove', moveHandler, false); }
       document.removeEventListener('mouseup', endHandler, false);
 
       // Remove body classes
@@ -1033,16 +1040,16 @@
       const ref = document.querySelector('script');
       style.id = 'bip-styles';
       if (!document.getElementById('bip-styles')) {
-        style.innerHTML = '.bip-busy * { user-select:none; pointer-events: none; } .has-touchmove { overflow: hidden; }';
+        style.innerHTML = '.bip-busy * { user-select:none; } .has-touchmove { overflow: hidden; }';
         ref.parentNode.insertBefore(style, ref);
       }
 
       // Event listeners
       document.addEventListener('touchstart', startHandler, {passive: false});
-      document.addEventListener('touchmove', moveHandler, {passive: false});
+      if (!settings.clickOnly) { document.addEventListener('touchmove', moveHandler, {passive: false}); }
       document.addEventListener('touchend', endHandler, {passive: false});
       document.addEventListener('mousedown', startHandler, false);
-      if (settings.clickDrag) { document.addEventListener('mousemove', moveHandler, false); }
+      if (settings.clickDrag && !settings.clickOnly) { document.addEventListener('mousemove', moveHandler, false); }
       document.addEventListener('mouseup', endHandler, false);
 
       // Emit event
