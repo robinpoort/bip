@@ -36,7 +36,7 @@
         background: rgba(0, 0, 0, .6);
         opacity: 0;
         /*transform: scale(1);*/
-        transition: opacity 300ms linear;
+        transition: opacity 3000ms linear;
         pointer-events: none;
         touch-action: none;
         backdrop-filter: blur(10px);
@@ -66,7 +66,7 @@
     .top,
     .bottom {
         width: 100%;
-        transition: transform 300ms;
+        transition: transform 3000ms;
     }
 
 
@@ -114,15 +114,16 @@
     .left {
         top: 0;
         height: 100%;
-        width: 50vw;
-        max-width: 240px;
-        transition: transform 300ms ease-out;
+        width: 200px;
+        max-width: 500px;
+        transition: width 3000ms ease-out;
     }
 
     .right.is-open,
     .left.is-open {
         transform: translateX(0);
         z-index: 3;
+        width: 500px;
     }
 
     .is-touchmove,
@@ -147,7 +148,8 @@
 
     .left {
         left: 0;
-        transform: translateX(-100%);
+        width: 200px;
+        /*transform: translateX(-100%);*/
     }
 
     .left button {
@@ -416,8 +418,11 @@
 <script type="text/javascript">
     const bip = new Bip('[data-touch]');
 
-    // const bip2 = new Bip('.top');
-    //
+    // const bip2 = new Bip('.left', {
+    //     cssValues: ['width', 'opacity'],
+    //     calculator: 'width'
+    // });
+
     // const bip3 = new Bip('.bottom');
     //
     // bip.on('init', function(e) {

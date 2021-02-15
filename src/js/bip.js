@@ -233,7 +233,6 @@
     element.removeAttribute('style');
     value.delay = getTransitionValue('transitionDelay', style, 'transform');
     value.duration = getTransitionValue('transitionDuration', style, 'transform');
-    element.style.transition = 'none';
 
     // Return
     return value;
@@ -251,7 +250,6 @@
     element.removeAttribute('style');
     styles.delay = getTransitionValue('transitionDelay', style, type);
     styles.duration = getTransitionValue('transitionDuration', style, type);
-    element.style.transition = 'none';
     return styles;
   }
 
@@ -331,10 +329,8 @@
       });
     }
 
-    // No transition styling
-    element.style.transition = 'none';
-
     // Get target values
+    element.style.transition = 'none';
     element.classList.toggle(settings.openClass);
     settings.matrixValues.forEach(function(prop) { toValues[prop] = (getMatrixValues(element, prop)) });
     settings.cssValues.forEach(function(prop) { toValues[prop] = (getCSSValue(element, prop)) });
@@ -351,6 +347,9 @@
 
     // Toggle class back
     element.classList.toggle(settings.openClass);
+
+    // No transition for moveable elements
+    element.style.transition = 'none';
 
     // Add properties and values to the object
     settings.matrixValues.forEach(function(el) {
@@ -410,7 +409,7 @@
       controls.forEach(function(ctrl) {
         if (ctrl.target.classList.contains(settings.openClass)) {
           buddies = [];
-          toggle(ctrl.target, settings, false);
+          toggle(ctrl.target, settings, true, false);
         }
       })
     }
@@ -539,7 +538,7 @@
   // Get remaining delay or duration
   // ===============================
 
-  function getRemaining(multiplierRoot, properties, type, settings) {
+  function getRemaining(multiplierRoot, properties, type, click, settings) {
     let value = 0;
     if (type === 'delay') {
       value = Math.max(0, Math.min(properties !== 'all' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay))
@@ -547,7 +546,7 @@
     if (type === 'duration') {
       value = Math.max(0, Math.min(properties !== 'all' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration))
     }
-    if (type === 'duration' && settings.maxEndDuration && settings.maxEndDuration < targetValues.totalDuration) {
+    if (type === 'duration' && settings.maxEndDuration && settings.maxEndDuration < targetValues.totalDuration && !click) {
       value = value * (settings.maxEndDuration / targetValues.totalDuration);
     }
     return value;
@@ -557,7 +556,7 @@
   // Set styling
   // ===========
 
-  function setStyling(element, values, target, settings, properties) {
+  function setStyling(element, values, target, settings, click, properties) {
     let transforms = [];
     let transitionProperties = [];
     let transitionDelays = [];
@@ -570,11 +569,12 @@
     // -------------------------
 
     function setTransitionProperties(prop, type, multiplierRoot) {
+      if (multiplierRoot.length === 0) return false;
       transitionProperties.push(prop);
-      transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', settings) + 'ms');
-      transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', settings) + 'ms');
+      transitionDelays.push(getRemaining(multiplierRoot, properties, 'delay', click, settings) + 'ms');
+      transitionDurations.push(getRemaining(multiplierRoot, properties, 'duration', click, settings) + 'ms');
       if (element === target && settings.calculator === type) {
-        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', settings);
+        targetValues.finalDuration = getRemaining(multiplierRoot, properties, 'duration', click, settings);
         if (isNaN(targetValues.finalDuration)) {
           targetValues.finalDuration = targetValues.totalDuration
         }
@@ -663,7 +663,7 @@
     buddies.forEach(function (buddy) {
       let count = (buddy.element.className.match(/openedby:/g) || []).length;
       if (count === 0 || (count === 1 && buddy.element.classList.contains('openedby:' + element.getAttribute(settings.id)))) {
-        setStyling(buddy.element, buddy, element, settings, 'all');
+        setStyling(buddy.element, buddy, element, settings, false, 'all');
       }
     });
   }
@@ -672,7 +672,7 @@
   // Toggle
   // ======
 
-  function toggle(target, settings, setStyle) {
+  function toggle(target, settings, click, setStyle) {
 
     if (buddies.length === 0) {
       buddies = getBuddies(target, settings);
@@ -682,7 +682,7 @@
     }
 
     // Reset target (and buddies)
-    resetStyle(target, settings, setStyle);
+    resetStyle(target, settings, click, setStyle);
     target.classList.toggle(settings.openClass);
 
     // Handle buddies
@@ -710,13 +710,13 @@
   // Reset styling
   // =============
 
-  function resetStyle(target, settings, setStyle) {
+  function resetStyle(target, settings, click, setStyle) {
     target.removeAttribute('style');
     if (buddies) {
       buddies.forEach(function (buddy) {
         buddy.element.removeAttribute('style');
         if (setStyle) {
-          setStyling(buddy.element, buddy, target, settings, 'reset');
+          setStyling(buddy.element, buddy, target, settings, click, 'reset');
         }
       });
     }
@@ -738,8 +738,10 @@
     target.classList.add(settings.transitioningClass);
 
     // Remove touchmove class from target
-    target.classList.remove(settings.touchmoveClass);
-    document.body.classList.remove('has-touchmove');
+    if (!click) {
+      target.classList.remove(settings.touchmoveClass);
+      document.body.classList.remove('has-touchmove');
+    }
 
     // Set "go" variable depending on settings
     if (click && settings.swipeOnly) { go = false; }
@@ -753,9 +755,9 @@
     }
     if (go && (isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
       if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
-        toggle(target, settings, true);
+        toggle(target, settings, click, true);
       } else {
-        resetStyle(target, settings, true);
+        resetStyle(target, settings, click, true);
       }
     }
 
@@ -841,9 +843,6 @@
       if (!target) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
 
-      // Prevent default scrolling on touch devices
-      event.preventDefault();
-
       // Reset values for new touchstart event
       resetValues();
 
@@ -862,8 +861,8 @@
       touchstartY = event.screenY || event.changedTouches[0].screenY;
 
       // Disable styling and disable user-select
-      document.body.classList.add('bip-busy');
       if (!settings.clickOnly) {
+        document.body.classList.add('bip-busy');
         target.classList.add(settings.touchmoveClass);
       }
 
@@ -971,7 +970,7 @@
      */
 
     publicAPIs.toggle = function (target) {
-      toggle(target, settings, true);
+      toggle(target, settings, true, true);
     };
 
 
