@@ -45,6 +45,7 @@
     clickDrag: true,
     swipeOnly: false,
     clickOnly: false,
+    accordion: false,
 
     emitEvents: true
   };
@@ -738,8 +739,8 @@
     target.classList.add(settings.transitioningClass);
 
     // Remove touchmove class from target
+    target.classList.remove(settings.touchmoveClass);
     if (!click) {
-      target.classList.remove(settings.touchmoveClass);
       document.body.classList.remove('has-touchmove');
     }
 
@@ -810,6 +811,7 @@
     let selectors = [];
     let settings;
     let target;
+    let hasActive = false;
 
 
     // Start handler
@@ -824,8 +826,15 @@
       let isControl = [];
       let isSelector = eventTarget.closest(selector) || false;
 
-      // See if element is a "close" target
+      // Selectors
       selectors.forEach(function(el) {
+
+        // See if we already have an open element
+        if (el.target.classList.contains(settings.openClass)) {
+          hasActive = el.target;
+        }
+
+        // See if element is a "close" target
         if (eventTarget.closest(el.controls)) {
           isControl.push(el);
         }
@@ -963,6 +972,15 @@
 
       // Handle touch gesture
       handleGesture(event, target, moveDirection, settings);
+
+      // Close current open one if accordion is true
+      if (settings.accordion && hasActive && hasActive !== target) {
+        buddies = [];
+        toggle(hasActive, settings, true, true);
+      }
+
+      // Reset
+      hasActive = false;
     }
 
     /**
@@ -970,6 +988,7 @@
      */
 
     publicAPIs.toggle = function (target) {
+      buddies = [];
       toggle(target, settings, true, true);
     };
 

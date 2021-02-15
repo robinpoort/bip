@@ -36,7 +36,7 @@
         background: rgba(0, 0, 0, .6);
         opacity: 0;
         /*transform: scale(1);*/
-        transition: opacity 3000ms linear;
+        transition: opacity 300ms linear;
         pointer-events: none;
         touch-action: none;
         backdrop-filter: blur(10px);
@@ -66,7 +66,7 @@
     .top,
     .bottom {
         width: 100%;
-        transition: transform 3000ms;
+        transition: transform 300ms;
     }
 
 
@@ -114,16 +114,13 @@
     .left {
         top: 0;
         height: 100%;
-        width: 200px;
-        max-width: 500px;
-        transition: width 3000ms ease-out;
+        transition: transform 300ms ease-out;
     }
 
     .right.is-open,
     .left.is-open {
         transform: translateX(0);
         z-index: 3;
-        width: 500px;
     }
 
     .is-touchmove,
@@ -149,7 +146,7 @@
     .left {
         left: 0;
         width: 200px;
-        /*transform: translateX(-100%);*/
+        transform: translateX(-100%);
     }
 
     .left button {
@@ -306,7 +303,7 @@
         position: relative;
         background: #fff;
         border: 4px solid #ccc;
-        height: 320px;
+        height: 400px;
         overflow: hidden;
     }
 
@@ -422,6 +419,10 @@
     //     cssValues: ['width', 'opacity'],
     //     calculator: 'width'
     // });
+
+    // document.body.onclick = function() {
+    //     bip.toggle(document.querySelector('.top'));
+    // }
 
     // const bip3 = new Bip('.bottom');
     //
