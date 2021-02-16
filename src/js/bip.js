@@ -22,11 +22,11 @@
   // Default variables
   // =================
   let defaults = {
-
     buddies: 'data-touch-buddies',
     controllers: 'data-touch-controllers',
     ignore: 'data-touch-ignore',
     noswipe: 'data-touch-noswipe',
+    noclick: 'data-touch-noclick',
     id: 'data-touch-id',
 
     calculator: 'translate',
@@ -62,6 +62,7 @@
   let buddies = [];
   let ignore = false;
   let noswipe = false;
+  let noclick = false;
 
 
   // Reset values
@@ -350,7 +351,7 @@
     // Toggle class back
     element.classList.toggle(settings.openClass);
 
-    // No transition for moveable elements
+    // No transition for movable elements
     element.style.transition = 'none';
 
     // Add properties and values to the object
@@ -479,10 +480,8 @@
 
   function getValues(target, settings) {
 
-    // Get transitionvalues
+    // Get transitionValues and return false if calculator styling is not found
     const transitionValues = getTransitionValues(target, target, settings, 'getValues');
-
-    // Return false if calculator styling is not found
     if (!transitionValues[settings.calculator]) return false;
 
     // Return values
@@ -548,6 +547,7 @@
     if (type === 'duration') {
       value = Math.max(0, Math.min(properties !== 'all' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration))
     }
+    // When maxEndDuration is set
     if (type === 'duration' && settings.maxEndDuration && settings.maxEndDuration < targetValues.totalDuration && !click) {
       value = value * (settings.maxEndDuration / targetValues.totalDuration);
     }
@@ -635,7 +635,6 @@
       }
     });
 
-
     // Set transition properties
     if (properties !== 'all') {
       element.style.transitionProperty = transitionProperties;
@@ -648,8 +647,8 @@
   }
 
 
-  // Transitions following the touch
-  // ===============================
+  // Transitions following gesture
+  // =============================
 
   function transitionWithGesture(element, touchmoveX, touchmoveY, settings) {
 
@@ -676,10 +675,12 @@
 
   function toggle(target, settings, click, setStyle) {
 
+    // Get targetValues if not set yet
     if (targetValues.length === 0) {
       targetValues = getValues(target, settings);
     }
 
+    // Get buddies if not set yet
     if (buddies.length === 0) {
       buddies = getBuddies(target, settings);
       buddies.forEach(function (buddy, i) {
@@ -687,7 +688,7 @@
       });
     }
 
-    // Reset target (and buddies)
+    // Reset target and buddies
     resetStyle(target, settings, click, setStyle);
     target.classList.toggle(settings.openClass);
 
@@ -751,11 +752,21 @@
   }
 
 
+  // Remove class by prefix
+  // ======================
+
+  function removeClassByPrefix(el, prefix) {
+    var regex = new RegExp('\\b' + prefix + '[^ ]*[ ]?\\b', 'g');
+    el.className = el.className.replace(regex, '');
+    return el;
+  }
+
+
   /**
    * Constructor
    */
 
-  const Constructor = function(selector, options) {
+  return function(selector, options) {
 
     // Unique Variables
     const publicAPIs = {};
@@ -777,6 +788,7 @@
       let click = ((touchstartX === touchendX && touchstartY === touchendY));
       let go = true;
 
+      // Return false if element is noswipe element and user didn't click
       if (noswipe && !click) return false;
 
       // Get targetValues if non defined
@@ -788,26 +800,24 @@
       const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
       const threshold = targetValues.difference * settings.threshold;
 
-      // Add the transitioning class
+      // Add / remove classes
       target.classList.add(settings.transitioningClass);
-
-      // Remove touchmove class from target
       target.classList.remove(settings.touchmoveClass);
-      if (!click) {
-        document.body.classList.remove('has-touchmove');
-      }
+      if (!click) { document.body.classList.remove('has-touchmove'); }
 
       // Set "go" variable depending on settings
       if (click && settings.swipeOnly) { go = false; }
       if (!click && settings.clickOnly) { go = false; }
+      if (click && noclick) { go = false; }
       if (noswipe && ((touchstartX !== touchendX || touchstartY !== touchendY))) { go = false; }
 
-      // Either toggle or reset
+      // See if eventTarget is a controller
       let isController = false;
       if (eventTarget.closest(target.getAttribute(settings.controllers))) {
         isController = true;
       }
 
+      // Either toggle or reset
       if (go && (isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
         if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
           toggle(target, settings, click, true);
@@ -822,14 +832,14 @@
         toggle(hasActive, settings, true, true);
       }
 
-      // Remove transitioning class when totalDuration is over
+      // Remove transitioning class when finalDuration is over
       setTimeout(function() {
         target.classList.remove(settings.transitioningClass);
         touchstart = false;
         hasActive = false;
 
         // Emit event
-        emitEvent('end', settings, target, {
+        emitEvent('finish', settings, target, {
           settings: settings,
           target: target,
           targetValues: targetValues,
@@ -865,13 +875,15 @@
         }
       });
 
-      // Return false if target or closest is an ignore target
-      ignore = !!eventTarget.closest('[' + settings.ignore + ']');
+      // See if element is an ignore, noswipe or noclick element
+      ignore = !!eventTarget.closest('[' + settings.ignore + ']') || false;
+      noswipe = !!eventTarget.closest('[' + settings.noswipe + ']') || false;
+      noclick = !!eventTarget.closest('[' + settings.noclick + ']') || false;
+
+      // Return false if ignore
       if (ignore) return false;
-      noswipe = !!eventTarget.closest('[' + settings.noswipe + ']');
 
       // Set target
-      // ==========
       target = getTarget(target, isControl, isSelector, settings);
 
       // Return false if applicable
@@ -882,9 +894,7 @@
       resetValues();
 
       // Prevent Default
-      if (!noswipe) {
-        event.preventDefault();
-      }
+      if (!noswipe && !noclick) { event.preventDefault(); }
 
       // Movement variables
       touchstartX = event.screenX || event.changedTouches[0].screenX;
@@ -892,7 +902,7 @@
       touchstart = true;
 
       // Emit event
-      emitEvent('startDrag', settings, target, {
+      emitEvent('start', settings, target, {
         settings: settings,
         target: target
       });
@@ -909,8 +919,6 @@
       if (!target) return false;
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
-
-      // Check if item is a noswipe item
       if (noswipe) return false;
 
       // Get target values
@@ -931,6 +939,7 @@
         document.body.classList.add('bip-busy');
       }
 
+      // Set touchmove class
       if (!target.classList.contains(settings.touchmoveClass)) {
         target.classList.add(settings.touchmoveClass);
       }
@@ -938,7 +947,7 @@
       // Prevent default scrolling on touch devices
       event.preventDefault();
 
-      // Add has-touchmove class
+      // Add has-touchmove class to body
       if (!document.body.classList.contains('has-touchmove') && event.type === 'touchmove') {
         document.body.classList.add('has-touchmove');
       }
@@ -1001,7 +1010,7 @@
       }
 
       // Emit event
-      emitEvent('endDrag', settings, target, {
+      emitEvent('end', settings, target, {
         settings: settings,
         target: target,
         targetValues: targetValues,
@@ -1039,15 +1048,23 @@
       // Remove body classes
       document.body.classList.remove('bip-busy', 'has-touchmove');
 
-      // Remove styling from all selectors
+      // Cleanup elements
+      function clean(element) {
+        element.target.style.transition = 'none';
+        element.target.classList.remove(settings.openClass, settings.touchmoveClass, settings.transitioningClass);
+        element.target.removeAttribute('style');
+        removeClassByPrefix(element.target, 'openedby');
+      }
+
+      // Remove styling from all selectors, controllers and buddies
       selectors.forEach(function(selector) {
-        selector.target.style.transition = 'none';
-        selector.target.classList.remove(settings.openClass, settings.touchmoveClass, settings.transitioningClass);
-        selector.target.removeAttribute('style');
+        clean(selector);
         document.querySelectorAll(selector.controls).forEach(function(control) {
-          control.style.transition = 'none';
-          control.classList.remove(settings.openClass);
-          control.removeAttribute('style');
+          clean(control);
+          setAria(control, settings);
+        });
+        document.querySelectorAll(selector.buddies).forEach(function(buddy) {
+          clean(buddy);
         });
       })
 
@@ -1073,7 +1090,8 @@
         el.setAttribute(settings.id, selector.replace(/\W/g, '') + i);
         selectors[i] = {
           'target': el,
-          'controls': el.getAttribute(settings.controllers)
+          'controls': el.getAttribute(settings.controllers),
+          'buddies': el.getAttribute(settings.buddies)
         };
 
         // Set default aria for each controller
@@ -1082,16 +1100,7 @@
         });
       });
 
-      // Bip styles
-      const style = document.createElement('style');
-      const ref = document.querySelector('script');
-      style.id = 'bip-styles';
-      if (!document.getElementById('bip-styles')) {
-        style.innerHTML = '.bip-busy * { user-select:none; } .has-touchmove { overflow: hidden; }';
-        ref.parentNode.insertBefore(style, ref);
-      }
-
-      // Event listeners
+      // Add event listeners
       document.addEventListener('touchstart', startHandler, {passive: false});
       if (!settings.clickOnly) { document.addEventListener('touchmove', moveHandler, {passive: false}); }
       document.addEventListener('touchend', endHandler, {passive: false});
@@ -1106,7 +1115,6 @@
           selectors: selectors
         });
       });
-
     }
 
     // Initialize the plugin
@@ -1123,7 +1131,5 @@
     return publicAPIs;
 
   };
-
-  return Constructor;
 
 });

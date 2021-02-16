@@ -182,21 +182,21 @@ bip.on('calculateTo', function (e) {
 }, false);
 ```
 
-### startDrag
+### start
 fired when start swipe/drag. Access to: settings, target, targetValues, buddies
 
 ```js
-bip.on('startDrag', function (e) {
-    console.log('startDrag', e.detail);
+bip.on('start', function (e) {
+    console.log('start', e.detail);
 }, false);
 ```
 
-### endDrag
+### end
 fired when end swipe/drag. Access to: settings, target, targetValues, buddies
 
 ```js
-bip.on('endDrag', function (e) {
-    console.log('endDrag', e.detail);
+bip.on('end', function (e) {
+    console.log('end', e.detail);
 }, false);
 ```
 
@@ -209,11 +209,11 @@ bip.on('toggle', function (e) {
 }, false);
 ```
 
-### end
+### finish
 fired when complete transition is done. Access to: settings, target, targetValues, buddies
 
 ```js
-bip.on('end', function (e) {
-    console.log('end', e.detail);
+bip.on('finish', function (e) {
+    console.log('finish', e.detail);
 }, false);
 ```
