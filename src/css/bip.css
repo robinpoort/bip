@@ -1,3 +1,7 @@
-body {
-    background: #eee;
+.bip-busy * {
+    user-select: none;
+}
+
+.has-touchmove {
+    overflow: hidden;
 }
