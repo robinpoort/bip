@@ -69,6 +69,7 @@
 
   function resetValues() {
     buddies = [];
+    targetValues = [];
   }
 
 
@@ -640,7 +641,7 @@
       element.style.transitionProperty = transitionProperties;
       element.style.transitionDelay = transitionDelays;
       element.style.transitionDuration = transitionDurations;
-      element.ontransitionend = function(event) {
+      element.ontransitionend = function() {
         element.removeAttribute('style');
       }
     }
@@ -675,6 +676,10 @@
 
   function toggle(target, settings, click, setStyle) {
 
+    if (targetValues.length === 0) {
+      targetValues = getValues(target, settings);
+    }
+
     if (buddies.length === 0) {
       buddies = getBuddies(target, settings);
       buddies.forEach(function (buddy, i) {
@@ -705,6 +710,14 @@
     document.querySelectorAll(target.getAttribute(settings.controllers)).forEach(function(control) {
       setAria(control, settings);
     });
+
+    // Emit event
+    emitEvent('toggle', settings, target, {
+      settings: settings,
+      target: target,
+      targetValues: targetValues,
+      buddies: buddies
+    });
   }
 
 
@@ -721,68 +734,6 @@
         }
       });
     }
-  }
-
-
-  // Handle finished gesture
-  // =======================
-
-  function handleGesture(event, target, moveDirection, settings) {
-
-    // Variables
-    const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
-    const threshold = targetValues.difference * settings.threshold;
-    let click = ((touchstartX === touchendX && touchstartY === touchendY));
-    let go = true;
-
-    // Add the transitioning class
-    target.classList.add(settings.transitioningClass);
-
-    // Remove touchmove class from target
-    target.classList.remove(settings.touchmoveClass);
-    if (!click) {
-      document.body.classList.remove('has-touchmove');
-    }
-
-    // Set "go" variable depending on settings
-    if (click && settings.swipeOnly) { go = false; }
-    if (!click && settings.clickOnly) { go = false; }
-    if (noswipe && ((touchstartX !== touchendX || touchstartY !== touchendY))) { go = false; }
-
-    // Either toggle or reset
-    let isController = false;
-    if (eventTarget.closest(target.getAttribute(settings.controllers))) {
-      isController = true;
-    }
-    if (go && (isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
-      if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
-        toggle(target, settings, click, true);
-      } else {
-        resetStyle(target, settings, click, true);
-      }
-    }
-
-    // Emit event
-    emitEvent('endDrag', settings, target, {
-      settings: settings,
-      target: target,
-      targetValues: targetValues,
-      buddies: buddies
-    });
-
-    // Remove transitioning class when totalDuration is over
-    setTimeout(function() {
-      target.classList.remove(settings.transitioningClass);
-      touchstart = false;
-
-      // Emit event
-      emitEvent('end', settings, target, {
-        settings: settings,
-        target: target,
-        targetValues: targetValues,
-        buddies: buddies
-      });
-    }, targetValues.finalDuration);
   }
 
 
@@ -814,6 +765,80 @@
     let hasActive = false;
 
 
+    // Handle finished gesture
+    // =======================
+
+    function handleGesture(target, moveDirection, settings) {
+
+      // remove the bip busy class so user can select again
+      document.body.classList.remove('bip-busy');
+
+      // Variables
+      let click = ((touchstartX === touchendX && touchstartY === touchendY));
+      let go = true;
+
+      if (noswipe && !click) return false;
+
+      // Get targetValues if non defined
+      if (targetValues.length === 0 && click) {
+        targetValues = getValues(target, settings);
+      }
+
+      // Variables
+      const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
+      const threshold = targetValues.difference * settings.threshold;
+
+      // Add the transitioning class
+      target.classList.add(settings.transitioningClass);
+
+      // Remove touchmove class from target
+      target.classList.remove(settings.touchmoveClass);
+      if (!click) {
+        document.body.classList.remove('has-touchmove');
+      }
+
+      // Set "go" variable depending on settings
+      if (click && settings.swipeOnly) { go = false; }
+      if (!click && settings.clickOnly) { go = false; }
+      if (noswipe && ((touchstartX !== touchendX || touchstartY !== touchendY))) { go = false; }
+
+      // Either toggle or reset
+      let isController = false;
+      if (eventTarget.closest(target.getAttribute(settings.controllers))) {
+        isController = true;
+      }
+
+      if (go && (isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
+        if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
+          toggle(target, settings, click, true);
+        } else {
+          resetStyle(target, settings, click, true);
+        }
+      }
+
+      // Close current open one if accordion is true
+      if (settings.accordion && (hasActive && hasActive !== target)) {
+        buddies = [];
+        toggle(hasActive, settings, true, true);
+      }
+
+      // Remove transitioning class when totalDuration is over
+      setTimeout(function() {
+        target.classList.remove(settings.transitioningClass);
+        touchstart = false;
+        hasActive = false;
+
+        // Emit event
+        emitEvent('end', settings, target, {
+          settings: settings,
+          target: target,
+          targetValues: targetValues,
+          buddies: buddies
+        });
+      }, targetValues.finalDuration);
+    }
+
+
     // Start handler
     // =============
 
@@ -843,6 +868,7 @@
       // Return false if target or closest is an ignore target
       ignore = !!eventTarget.closest('[' + settings.ignore + ']');
       if (ignore) return false;
+      noswipe = !!eventTarget.closest('[' + settings.noswipe + ']');
 
       // Set target
       // ==========
@@ -855,35 +881,20 @@
       // Reset values for new touchstart event
       resetValues();
 
-      // Get target values
-      targetValues = getValues(target, settings);
-      if (!targetValues) return false;
-
-      // Get buddies and values
-      buddies = getBuddies(target, settings) || false;
-      buddies.forEach(function (buddy, i) {
-        buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
-      });
+      // Prevent Default
+      if (!noswipe) {
+        event.preventDefault();
+      }
 
       // Movement variables
       touchstartX = event.screenX || event.changedTouches[0].screenX;
       touchstartY = event.screenY || event.changedTouches[0].screenY;
-
-      // Disable styling and disable user-select
-      if (!settings.clickOnly) {
-        document.body.classList.add('bip-busy');
-        target.classList.add(settings.touchmoveClass);
-      }
-
-      // Set touchstart to true
       touchstart = true;
 
       // Emit event
       emitEvent('startDrag', settings, target, {
         settings: settings,
-        target: target,
-        targetValues: targetValues,
-        buddies: buddies
+        target: target
       });
     }
 
@@ -900,7 +911,29 @@
       if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Check if item is a noswipe item
-      noswipe = !!eventTarget.closest('[' + settings.noswipe + ']');
+      if (noswipe) return false;
+
+      // Get target values
+      if (targetValues.length === 0) {
+        targetValues = getValues(target, settings);
+      }
+
+      // Get buddies and values
+      if (buddies.length === 0) {
+        buddies = getBuddies(target, settings) || false;
+        buddies.forEach(function (buddy, i) {
+          buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
+        });
+      }
+
+      // Disable styling and disable user-select
+      if (!settings.clickOnly && !document.body.classList.contains('bip-busy')) {
+        document.body.classList.add('bip-busy');
+      }
+
+      if (!target.classList.contains(settings.touchmoveClass)) {
+        target.classList.add(settings.touchmoveClass);
+      }
 
       // Prevent default scrolling on touch devices
       event.preventDefault();
@@ -952,9 +985,6 @@
 
     function endHandler(event) {
 
-      // remove the bip busy class so user can select again
-      document.body.classList.remove('bip-busy');
-
       // Return false if applicable
       if (!touchstart) return false;
       if (!target) return false;
@@ -970,17 +1000,16 @@
         touchendY = event.screenY;
       }
 
+      // Emit event
+      emitEvent('endDrag', settings, target, {
+        settings: settings,
+        target: target,
+        targetValues: targetValues,
+        buddies: buddies
+      });
+
       // Handle touch gesture
-      handleGesture(event, target, moveDirection, settings);
-
-      // Close current open one if accordion is true
-      if (settings.accordion && hasActive && hasActive !== target) {
-        buddies = [];
-        toggle(hasActive, settings, true, true);
-      }
-
-      // Reset
-      hasActive = false;
+      handleGesture(target, moveDirection, settings);
     }
 
     /**
@@ -988,8 +1017,8 @@
      */
 
     publicAPIs.toggle = function (target) {
-      buddies = [];
-      toggle(target, settings, true, true);
+      resetValues();
+      handleGesture(target, moveDirection, settings);
     };
 
 

@@ -160,7 +160,7 @@ fired when initiated. Access to: settings, selectors
 
 ```js
 bip.on('init', function (e) {
-    console.log('bipInit', e.detail);
+    console.log('init', e.detail);
 });
 ```
 
@@ -168,7 +168,7 @@ bip.on('init', function (e) {
 fired when target "from" values have been read. Access to: settings, target, fromValues
 
 ```js
-bip.on('bipInit', function (e) {
+bip.on('calculateFrom', function (e) {
     console.log('calculateFrom', e.detail);
 }, false);
 ```
@@ -178,7 +178,7 @@ fired when target "to" values have been read. Access to: settings, target, fromV
 
 ```js
 bip.on('calculateTo', function (e) {
-    console.log('bipCalculateFrom', e.detail);
+    console.log('calculateTo', e.detail);
 }, false);
 ```
 
@@ -187,7 +187,7 @@ fired when start swipe/drag. Access to: settings, target, targetValues, buddies
 
 ```js
 bip.on('startDrag', function (e) {
-    console.log('bipCalculateFrom', e.detail);
+    console.log('startDrag', e.detail);
 }, false);
 ```
 
@@ -196,7 +196,16 @@ fired when end swipe/drag. Access to: settings, target, targetValues, buddies
 
 ```js
 bip.on('endDrag', function (e) {
-    console.log('bipCalculateFrom', e.detail);
+    console.log('endDrag', e.detail);
+}, false);
+```
+
+### toggle
+fired toggles. Access to: settings, target, targetValues, buddies
+
+```js
+bip.on('toggle', function (e) {
+    console.log('toggle', e.detail);
 }, false);
 ```
 
@@ -205,6 +214,6 @@ fired when complete transition is done. Access to: settings, target, targetValue
 
 ```js
 bip.on('end', function (e) {
-    console.log('bipCalculateFrom', e.detail);
+    console.log('end', e.detail);
 }, false);
 ```
