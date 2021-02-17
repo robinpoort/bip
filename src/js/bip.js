@@ -1050,15 +1050,15 @@
 
       // Cleanup elements
       function clean(element) {
-        element.target.style.transition = 'none';
-        element.target.classList.remove(settings.openClass, settings.touchmoveClass, settings.transitioningClass);
-        element.target.removeAttribute('style');
-        removeClassByPrefix(element.target, 'openedby');
+        element.style.transition = 'none';
+        element.classList.remove(settings.openClass, settings.touchmoveClass, settings.transitioningClass);
+        element.removeAttribute('style');
+        removeClassByPrefix(element, 'openedby');
       }
 
       // Remove styling from all selectors, controllers and buddies
       selectors.forEach(function(selector) {
-        clean(selector);
+        clean(selector.target);
         document.querySelectorAll(selector.controls).forEach(function(control) {
           clean(control);
           setAria(control, settings);
