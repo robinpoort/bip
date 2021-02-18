@@ -69,6 +69,8 @@
   // ============
 
   function resetValues() {
+    lastDifference = 0;
+    moveDirection = 'forward';
     buddies = [];
     targetValues = [];
   }
@@ -542,10 +544,10 @@
   function getRemaining(multiplierRoot, properties, type, click, settings) {
     let value = 0;
     if (type === 'delay') {
-      value = Math.max(0, Math.min(properties !== 'all' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay))
+      value = Math.max(0, Math.min(properties !== 'all' && moveDirection === 'forward' ? multiplierRoot.toggleDelay : multiplierRoot.resetDelay, multiplierRoot.delay))
     }
     if (type === 'duration') {
-      value = Math.max(0, Math.min(properties !== 'all' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration))
+      value = Math.max(0, Math.min(properties !== 'all' && moveDirection === 'forward' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration))
     }
     // When maxEndDuration is set
     if (type === 'duration' && settings.maxEndDuration && settings.maxEndDuration < targetValues.totalDuration && !click) {
@@ -978,7 +980,7 @@
       if (!isBetween && closest === 'from') {
         targetValues.axis === 'x' ? touchmoveX = touchstartX : touchmoveY = touchstartY;
         moveDirection = 'backward';
-      } else {
+      } else if (!isBetween && closest === 'to') {
         moveDirection = 'forward';
       }
 
@@ -1050,15 +1052,15 @@
 
       // Cleanup elements
       function clean(element) {
-        element.target.style.transition = 'none';
-        element.target.classList.remove(settings.openClass, settings.touchmoveClass, settings.transitioningClass);
-        element.target.removeAttribute('style');
-        removeClassByPrefix(element.target, 'openedby');
+        element.style.transition = 'none';
+        element.classList.remove(settings.openClass, settings.touchmoveClass, settings.transitioningClass);
+        element.removeAttribute('style');
+        removeClassByPrefix(element, 'openedby');
       }
 
       // Remove styling from all selectors, controllers and buddies
       selectors.forEach(function(selector) {
-        clean(selector);
+        clean(selector.target);
         document.querySelectorAll(selector.controls).forEach(function(control) {
           clean(control);
           setAria(control, settings);
