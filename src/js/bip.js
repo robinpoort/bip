@@ -776,6 +776,7 @@
     let settings;
     let target;
     let hasActive = false;
+    let isMoving = true;
 
 
     // Handle finished gesture
@@ -858,6 +859,7 @@
 
       // Set eventTarget
       eventTarget = event.target;
+      isMoving = true;
 
       // Targets
       let isControl = [];
@@ -894,9 +896,6 @@
 
       // Reset values for new touchstart event
       resetValues();
-
-      // Prevent Default
-      if (!noswipe && !noclick) { event.preventDefault(); }
 
       // Movement variables
       touchstartX = event.screenX || event.changedTouches[0].screenX;
@@ -936,24 +935,6 @@
         });
       }
 
-      // Disable styling and disable user-select
-      if (!settings.clickOnly && !document.body.classList.contains('bip-busy')) {
-        document.body.classList.add('bip-busy');
-      }
-
-      // Set touchmove class
-      if (!target.classList.contains(settings.touchmoveClass)) {
-        target.classList.add(settings.touchmoveClass);
-      }
-
-      // Prevent default scrolling on touch devices
-      event.preventDefault();
-
-      // Add has-touchmove class to body
-      if (!document.body.classList.contains('has-touchmove') && event.type === 'touchmove') {
-        document.body.classList.add('has-touchmove');
-      }
-
       // Variables
       let touchmoveX = event.screenX || (event.changedTouches ? event.changedTouches[0].screenX : false);
       let touchmoveY = event.screenY || (event.changedTouches ? event.changedTouches[0].screenY : false);
@@ -964,30 +945,57 @@
       let closest = getClosest(targetValues.from, targetValues.to, translated);
       let isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.from, targetValues.to, true) : translatedY.between(targetValues.from, targetValues.to, true);
 
-      // Set last difference
-      if ((getDifference(difference, lastDifference) > settings.difference) || lastDifference === false) {
-        lastDifference = difference
+      // Set direction
+      if (targetValues.axis === 'x' && (Math.abs(touchmoveX - touchstartX) < Math.abs(touchmoveY - touchstartY))) { isMoving = false }
+      if (targetValues.axis === 'y' && (Math.abs(touchmoveX - touchstartX) > Math.abs(touchmoveY - touchstartY))) { isMoving = false }
+
+      // Only run when move direction equals target direction
+      if (isMoving) {
+
+        // Disable styling and disable user-select
+        if (!settings.clickOnly && !document.body.classList.contains('bip-busy')) {
+          document.body.classList.add('bip-busy');
+        }
+
+        // Set touchmove class
+        if (!target.classList.contains(settings.touchmoveClass)) {
+          target.classList.add(settings.touchmoveClass);
+        }
+
+        // Prevent default scrolling on touch devices
+        event.preventDefault();
+
+        // Add has-touchmove class to body
+        if (!document.body.classList.contains('has-touchmove') && event.type === 'touchmove') {
+          document.body.classList.add('has-touchmove');
+        }
+
+        // Set last difference
+        if ((getDifference(difference, lastDifference) > settings.difference) || lastDifference === false) {
+          lastDifference = difference
+        }
+
+        // Set move direction
+        if (isBetween && difference > lastDifference) {
+          moveDirection = 'forward';
+        } else if (isBetween && difference < lastDifference) {
+          moveDirection = 'backward';
+        }
+
+        // Transition
+        if (!isBetween && closest === 'from') {
+          targetValues.axis === 'x' ? touchmoveX = touchstartX : touchmoveY = touchstartY;
+          moveDirection = 'backward';
+        } else if (!isBetween && closest === 'to') {
+          moveDirection = 'forward';
+        }
+
+        // Swipe if applicable
+        if (!noswipe && difference > 1) {
+          transitionWithGesture(target, touchmoveX, touchmoveY, settings);
+        }
       }
 
-      // Set move direction
-      if (isBetween && difference > lastDifference) {
-        moveDirection = 'forward';
-      } else if (isBetween && difference < lastDifference) {
-        moveDirection = 'backward';
-      }
-
-      // Transition
-      if (!isBetween && closest === 'from') {
-        targetValues.axis === 'x' ? touchmoveX = touchstartX : touchmoveY = touchstartY;
-        moveDirection = 'backward';
-      } else if (!isBetween && closest === 'to') {
-        moveDirection = 'forward';
-      }
-
-      // Smoother transitions by using requestAnimationframe
-      if (!noswipe) {
-        transitionWithGesture(target, touchmoveX, touchmoveY, settings);
-      }
     }
 
 
@@ -997,6 +1005,7 @@
     function endHandler(event) {
 
       // Return false if applicable
+      if (!isMoving) return false;
       if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
