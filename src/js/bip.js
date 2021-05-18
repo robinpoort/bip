@@ -27,7 +27,10 @@
     ignore: 'data-touch-ignore',
     noswipe: 'data-touch-noswipe',
     noclick: 'data-touch-noclick',
+    scrollable: 'data-touch-scrollable',
+    accordion: 'data-touch-accordion',
     id: 'data-touch-id',
+    controls: 'data-touch-controls',
 
     calculator: 'translate',
     threshold: 0.2,
@@ -37,6 +40,7 @@
     openClass: 'is-open',
     touchmoveClass: 'is-touchmove',
     transitioningClass: 'is-transitioning',
+    hasTouchmoveClass: 'has-touchmove',
 
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
@@ -45,7 +49,6 @@
     clickDrag: true,
     swipeOnly: false,
     clickOnly: false,
-    accordion: false,
 
     emitEvents: true
   };
@@ -776,7 +779,7 @@
     let settings;
     let target;
     let hasActive = false;
-    let isMoving = true;
+    let isMoving = 0;
 
 
     // Handle finished gesture
@@ -806,7 +809,7 @@
       // Add / remove classes
       target.classList.add(settings.transitioningClass);
       target.classList.remove(settings.touchmoveClass);
-      if (!click) { document.body.classList.remove('has-touchmove'); }
+      if (!click) { document.body.classList.remove(settings.hasTouchmoveClass); }
 
       // Set "go" variable depending on settings
       if (click && settings.swipeOnly) { go = false; }
@@ -830,7 +833,7 @@
       }
 
       // Close current open one if accordion is true
-      if (settings.accordion && (hasActive && hasActive !== target)) {
+      if (target.hasAttribute(settings.accordion) && (hasActive && hasActive !== target && hasActive.hasAttribute(settings.accordion))) {
         buddies = [];
         toggle(hasActive, settings, true, true);
       }
@@ -859,7 +862,7 @@
 
       // Set eventTarget
       eventTarget = event.target;
-      isMoving = true;
+      isMoving = 0;
 
       // Targets
       let isControl = [];
@@ -889,6 +892,12 @@
 
       // Set target
       target = getTarget(target, isControl, isSelector, settings);
+
+      // Re-set target if it's a control
+      if (eventTarget.closest('['+settings.controls+']')) {
+        let controlTarget = eventTarget.closest('['+settings.controls+']').getAttribute(settings.controls);
+        target = getTarget(target, false, document.querySelector('['+settings.id+'="'+controlTarget+'"]'));
+      }
 
       // Return false if applicable
       if (!target) return false;
@@ -945,12 +954,43 @@
       let closest = getClosest(targetValues.from, targetValues.to, translated);
       let isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.from, targetValues.to, true) : translatedY.between(targetValues.from, targetValues.to, true);
 
-      // Set direction
-      if (targetValues.axis === 'x' && (Math.abs(touchmoveX - touchstartX) < Math.abs(touchmoveY - touchstartY))) { isMoving = false }
-      if (targetValues.axis === 'y' && (Math.abs(touchmoveX - touchstartX) > Math.abs(touchmoveY - touchstartY))) { isMoving = false }
+      // Check if move is approved and set isMoving variable
+      const scrollables = target.querySelectorAll('['+settings.scrollable+']');
+      if (isMoving === 0) {
+        if (targetValues.axis === 'x') {
+          if (difference > 1) {
+            if ((Math.abs(touchmoveX - touchstartX) < Math.abs(touchmoveY - touchstartY)) && !document.body.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
+            else { isMoving = 1}
+          }
+          if (scrollables.length > 0 && target.classList.contains(settings.openClass)) {
+            scrollables.forEach(function(scrollable) {
+              if (eventTarget.closest('['+settings.scrollable+']') === scrollable && scrollable.scrollWidth > scrollable.clientWidth) {
+                isMoving = -1;
+              }
+            })
+          }
+        }
+
+        if (targetValues.axis === 'y') {
+          if (difference > 1) {
+            if ((Math.abs(touchmoveX - touchstartX) > Math.abs(touchmoveY - touchstartY)) && !document.body.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
+            else { isMoving = 1}
+          }
+          if (scrollables.length > 0 && target.classList.contains(settings.openClass)) {
+            scrollables.forEach(function(scrollable) {
+              if (eventTarget.closest('['+settings.scrollable+']') === scrollable && scrollable.scrollHeight > scrollable.clientHeight) {
+                isMoving = -1;
+              }
+            })
+          }
+        }
+      }
 
       // Only run when move direction equals target direction
-      if (isMoving) {
+      if (isMoving === 1) {
+
+        // Prevent default scroll behavior
+        event.preventDefault();
 
         // Disable styling and disable user-select
         if (!settings.clickOnly && !document.body.classList.contains('bip-busy')) {
@@ -962,12 +1002,9 @@
           target.classList.add(settings.touchmoveClass);
         }
 
-        // Prevent default scrolling on touch devices
-        event.preventDefault();
-
         // Add has-touchmove class to body
-        if (!document.body.classList.contains('has-touchmove') && event.type === 'touchmove') {
-          document.body.classList.add('has-touchmove');
+        if (!document.body.classList.contains(settings.hasTouchmoveClass) && event.type === 'touchmove') {
+          document.body.classList.add(settings.hasTouchmoveClass);
         }
 
         // Set last difference
@@ -995,7 +1032,6 @@
           transitionWithGesture(target, touchmoveX, touchmoveY, settings);
         }
       }
-
     }
 
 
@@ -1005,10 +1041,10 @@
     function endHandler(event) {
 
       // Return false if applicable
-      if (!isMoving) return false;
       if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
+      if (isMoving === -1) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
 
       // Variables
@@ -1031,6 +1067,7 @@
       // Handle touch gesture
       handleGesture(target, moveDirection, settings);
     }
+
 
     /**
      * Toggle
@@ -1057,7 +1094,7 @@
       document.removeEventListener('mouseup', endHandler, false);
 
       // Remove body classes
-      document.body.classList.remove('bip-busy', 'has-touchmove');
+      document.body.classList.remove('bip-busy', settings.hasTouchmoveClass);
 
       // Cleanup elements
       function clean(element) {
@@ -1098,7 +1135,8 @@
 
       // Grab all selectors
       document.querySelectorAll(selector).forEach(function(el, i) {
-        el.setAttribute(settings.id, selector.replace(/\W/g, '') + i);
+        const selectorId = selector.replace(/\W/g, '') + i;
+        el.setAttribute(settings.id, selectorId);
         selectors[i] = {
           'target': el,
           'controls': el.getAttribute(settings.controllers),
@@ -1108,6 +1146,7 @@
         // Set default aria for each controller
         document.querySelectorAll(el.getAttribute(settings.controllers)).forEach(function(control) {
           setAria(control, settings);
+          control.setAttribute(settings.controls, selectorId);
         });
       });
 
