@@ -785,7 +785,7 @@
     // Handle finished gesture
     // =======================
 
-    function handleGesture(target, moveDirection, settings) {
+    function handleGesture(target, moveDirection, settings, isPublic) {
 
       // remove the bip busy class so user can select again
       document.body.classList.remove('bip-busy');
@@ -824,7 +824,7 @@
       }
 
       // Either toggle or reset
-      if (go && (isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
+      if (go && (isPublic || isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
         if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
           toggle(target, settings, click, true);
         } else {
@@ -1065,7 +1065,7 @@
       });
 
       // Handle touch gesture
-      handleGesture(target, moveDirection, settings);
+      handleGesture(target, moveDirection, settings, false);
     }
 
 
@@ -1075,7 +1075,7 @@
 
     publicAPIs.toggle = function (target) {
       resetValues();
-      handleGesture(target, moveDirection, settings);
+      handleGesture(target, moveDirection, settings, true);
     };
 
 
