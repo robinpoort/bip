@@ -66,6 +66,7 @@
   let ignore = false;
   let noswipe = false;
   let noclick = false;
+  let endHandled = false;
 
 
   // Reset values
@@ -819,7 +820,7 @@
 
       // See if eventTarget is a controller
       let isController = false;
-      if (eventTarget.closest(target.getAttribute(settings.controllers))) {
+      if (eventTarget && eventTarget.closest(target.getAttribute(settings.controllers))) {
         isController = true;
       }
 
@@ -1064,8 +1065,29 @@
         buddies: buddies
       });
 
+      // Set end handled
+      endHandled = true;
+
       // Handle touch gesture
       handleGesture(target, moveDirection, settings, false);
+    }
+
+
+    // Click handler
+    // =============
+
+    function clickHandler(event) {
+      const controller = event.target.closest('[' + settings.controls + ']');
+      if (!controller) return false;
+      setTimeout(function() {
+        if (!endHandled) {
+          const clickTarget = document.querySelector('['+settings.id+'="'+controller.getAttribute(settings.controls)+'"]');
+          publicAPIs.toggle(clickTarget);
+          endHandled = false;
+        } else {
+          endHandled = false;
+        }
+      }, 16);
     }
 
 
@@ -1092,6 +1114,7 @@
       document.removeEventListener('mousedown', startHandler, false);
       if (settings.clickDrag && !settings.clickOnly) {  document.removeEventListener('mousemove', moveHandler, false); }
       document.removeEventListener('mouseup', endHandler, false);
+      document.removeEventListener('click', clickHandler, false);
 
       // Remove body classes
       document.body.classList.remove('bip-busy', settings.hasTouchmoveClass);
@@ -1157,6 +1180,7 @@
       document.addEventListener('mousedown', startHandler, false);
       if (settings.clickDrag && !settings.clickOnly) { document.addEventListener('mousemove', moveHandler, false); }
       document.addEventListener('mouseup', endHandler, false);
+      document.addEventListener('click', clickHandler, false);
 
       // Emit event
       document.querySelectorAll(selector).forEach(function(el) {
