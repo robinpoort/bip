@@ -349,8 +349,9 @@
                 <h4>Left & right slide menus</h4>
                 <p>Open and close by clicking buttons or swipe/drag.</p>
             </div>
-            <div class="overlay" data-touch-id="sidemenu-overlay"></div>
-            <div class="right" data-touch data-touch-controllers=".controlRight, [data-touch-id=sidemenu-overlay]" data-touch-buddies=".burger1Right, .burger2Right, .burger3Right">
+            <div class="overlay" data-overlay-right></div>
+            <div class="overlay" data-overlay-left></div>
+            <div class="right" data-touch data-touch-controllers=".controlRight, [data-overlay-right]" data-touch-buddies=".burger1Right, .burger2Right, .burger3Right">
                 <button class="controlRight" type="button">
                     <span class="hamburger">
                         <span class="burger1 burger1Right"></span>
@@ -363,7 +364,7 @@
                 <p>Right details</p>
                 <p>Right details</p>
             </div>
-            <div class="left" data-touch data-touch-controllers=".controlLeft, [data-touch-id=sidemenu-overlay]" data-touch-buddies=".burger1Left, .burger2Left, .burger3Left">
+            <div class="left" data-touch data-touch-controllers=".controlLeft, [data-overlay-left]" data-touch-buddies=".burger1Left, .burger2Left, .burger3Left">
                 <button class="controlLeft" type="button">
                     <span class="hamburger">
                         <span class="burger1 burger1Left"></span>
@@ -390,8 +391,10 @@
                 <h4>Top and bottom drawers</h4>
                 <p>Open and close by clicking buttons or swipe/drag.</p>
             </div>
-            <div class="overlay" data-touch-id="drawer-overlay"></div>
-            <div class="top" data-touch data-touch-controllers=".controlTop, [data-touch-id=drawer-overlay]" data-touch-buddies=".arrow1top, .arrow2top">
+            <div class="overlay"></div>
+            <div class="overlay" data-overlay-top></div>
+            <div class="overlay" data-overlay-bottom></div>
+            <div class="top" data-touch data-touch-controllers=".controlTop, [data-overlay-top]" data-touch-buddies=".arrow1top, .arrow2top">
                 <button class="controlTop" type="button">
                     <span class="arrow">
                         <span class="arrow1 arrow1top"></span>
@@ -411,7 +414,7 @@
                     </div>
                 </div>
             </div>
-            <div class="bottom" data-touch data-touch-controllers=".controlBottom, [data-touch-id=drawer-overlay]" data-touch-buddies=".arrow1bottom, .arrow2bottom">
+            <div class="bottom" data-touch data-touch-controllers=".controlBottom, [data-overlay-bottom]" data-touch-buddies=".arrow1bottom, .arrow2bottom">
                 <button class="controlBottom" type="button">
                     <span class="arrow">
                         <span class="arrow1 arrow1bottom"></span>

@@ -41,6 +41,7 @@
     touchmoveClass: 'is-touchmove',
     transitioningClass: 'is-transitioning',
     hasTouchmoveClass: 'has-touchmove',
+    hasOpenClass: 'has-open-bip',
 
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
@@ -778,7 +779,7 @@
     const publicAPIs = {};
     let selectors = [];
     let settings;
-    let target;
+    let target = false;
     let hasActive = false;
     let isMoving = 0;
 
@@ -845,6 +846,11 @@
         touchstart = false;
         hasActive = false;
 
+        // Remove open class from the body
+        if (document.querySelectorAll('[class*="openedby:"]').length === 0) {
+          document.body.classList.remove(settings.hasOpenClass);
+        }
+
         // Emit event
         emitEvent('finish', settings, target, {
           settings: settings,
@@ -892,12 +898,11 @@
       if (ignore) return false;
 
       // Set target
-      target = getTarget(target, isControl, isSelector, settings);
-
-      // Re-set target if it's a control
       if (eventTarget.closest('['+settings.controls+']')) {
         let controlTarget = eventTarget.closest('['+settings.controls+']').getAttribute(settings.controls);
         target = getTarget(target, false, document.querySelector('['+settings.id+'="'+controlTarget+'"]'));
+      } else {
+        target = getTarget(target, isControl, isSelector, settings);
       }
 
       // Return false if applicable
@@ -911,6 +916,9 @@
       touchstartX = event.screenX || event.changedTouches[0].screenX;
       touchstartY = event.screenY || event.changedTouches[0].screenY;
       touchstart = true;
+
+      // Add open class to the body
+      document.body.classList.add(settings.hasOpenClass);
 
       // Emit event
       emitEvent('start', settings, target, {
@@ -1048,6 +1056,9 @@
       if (isMoving === -1) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
 
+      // Prevent default
+      event.preventDefault();
+
       // Variables
       if (event.type === 'touchend') {
         touchendX = event.changedTouches[0].screenX;
@@ -1077,17 +1088,16 @@
     // =============
 
     function clickHandler(event) {
+      if (event.target.closest(settings.ignore)) return false;
       const controller = event.target.closest('[' + settings.controls + ']');
       if (!controller) return false;
       setTimeout(function() {
         if (!endHandled) {
           const clickTarget = document.querySelector('['+settings.id+'="'+controller.getAttribute(settings.controls)+'"]');
           publicAPIs.toggle(clickTarget);
-          endHandled = false;
-        } else {
-          endHandled = false;
         }
-      }, 16);
+        endHandled = false;
+      }, 100);
     }
 
 
