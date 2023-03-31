@@ -85,6 +85,21 @@ Data attribute name for ignore elements (default: `data-touch-ignore`)
 ### noswipe
 Data attribute name for noswipe elements. Clicking these elements will still trigger toggle. (default: `data-touch-noswipe`)
 
+### noclick
+Data attribute name for noclick elements. Swiping these elements will still trigger toggle. (default: `data-touch-noclick`)
+
+### scrollable
+Data attribute name for scrollable elements. When this element has overflowing content swipe will be disabled so the user can scroll (especially on touch devices). (default: `data-touch-noclick`)
+
+### accordion
+Data attribute name for accordion elements. Items only accordion if both active and target element have this data attribute. (default: `data-touch-accordion`)
+
+### id
+Data attribute name to identify targets. Bip adds this attribute to all bip targets. (default: `data-touch-id`)
+
+### controls
+Data attribute name to identify controllers. Bip adds this attribute to all bip controllers. (default: `data-touch-controls`)
+
 ### calculator
 The property that is being used to calculate 'from' and 'to' of target element (default: `'translate'`).
 
@@ -106,6 +121,9 @@ Class name for target element while dragging/swiping. (default: `'is-touchmove'`
 ### transitioningClass
 Class name for target element when transitioning (on release). (default: `'is-transitioning'`)
 
+### hasTouchmoveClass
+Class name for body element when there's an active touchmove happening. (default: `'has-touchmove'`)
+
 ### matrixValues
 Default matrix values to check. (default: `['translate', 'scale', 'rotate', 'skew']`)
 
@@ -123,6 +141,9 @@ Disable clicks. Only swipe (or drag) will work. (default: `false`)
 
 ### clickOnly
 Disable swipes. Only click will work. (default: `false`)
+
+### closeOnly
+Disable open swipes. Only closing swipes will work. (default: `false`)
 
 ### emitEvents
 Whether to emit events or not. (default: `true`)
@@ -183,7 +204,7 @@ bip.on('calculateTo', function (e) {
 ```
 
 ### start
-fired when start swipe/drag. Access to: settings, target, targetValues, buddies
+fired when start swipe/drag. Access to: settings, target
 
 ```js
 bip.on('start', function (e) {
@@ -201,11 +222,20 @@ bip.on('end', function (e) {
 ```
 
 ### toggle
-fired toggles. Access to: settings, target, targetValues, buddies
+fired when toggled. Access to: settings, target, targetValues, buddies
 
 ```js
 bip.on('toggle', function (e) {
     console.log('toggle', e.detail);
+}, false);
+```
+
+### clickToggle
+fired when click event happens. Access to: settings, target
+
+```js
+bip.on('clickToggle', function (e) {
+    console.log('clickToggle', e.detail);
 }, false);
 ```
 

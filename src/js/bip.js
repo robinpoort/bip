@@ -9,16 +9,16 @@
     root.Bip = factory(root);
   }
 })(typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this, function (window) {
-
+  
   'use strict';
-
-
+  
+  
   // Feature Test
   // ============
-
+  
   let supports = 'querySelector' in document && 'addEventListener' in window;
-
-
+  
+  
   // Default variables
   // =================
   let defaults = {
@@ -27,29 +27,34 @@
     ignore: 'data-touch-ignore',
     noswipe: 'data-touch-noswipe',
     noclick: 'data-touch-noclick',
+    scrollable: 'data-touch-scrollable',
+    accordion: 'data-touch-accordion',
     id: 'data-touch-id',
-
+    controls: 'data-touch-controls',
+    
     calculator: 'translate',
     threshold: 0.2,
     difference: 10,
     maxEndDuration: 500,
-
+    
     openClass: 'is-open',
     touchmoveClass: 'is-touchmove',
     transitioningClass: 'is-transitioning',
-
+    hasTouchmoveClass: 'has-touchmove',
+    hasOpenClass: 'has-open-bip',
+    
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
     yAxis: ['top', 'bottom', 'height', 'margin-top', 'margin-bottom', 'padding-top', 'padding-bottom'],
-
+    
     clickDrag: true,
     swipeOnly: false,
     clickOnly: false,
-    accordion: false,
-
+    closeOnly: false,
+    
     emitEvents: true
   };
-
+  
   let touchstart = false;
   let touchstartX = 0;
   let touchstartY = 0;
@@ -63,30 +68,30 @@
   let ignore = false;
   let noswipe = false;
   let noclick = false;
-
-
+  
+  
   // Reset values
   // ============
-
+  
   function resetValues() {
     lastDifference = 0;
     moveDirection = 'forward';
     buddies = [];
     targetValues = [];
   }
-
-
+  
+  
   // forEach polyfill
   // ================
-
+  
   if (window.NodeList && !NodeList.prototype.forEach) {
     NodeList.prototype.forEach = Array.prototype.forEach;
   }
-
-
+  
+  
   // Closest polyfill
   // ================
-
+  
   /**
    * Element.closest() polyfill
    * https://developer.mozilla.org/en-US/docs/Web/API/Element/closest#Polyfill
@@ -106,11 +111,11 @@
       return null;
     };
   }
-
-
+  
+  
   // Emit event
   // ==========
-
+  
   function emitEvent(type, settings, target, details) {
     if (!settings.emitEvents || typeof window.CustomEvent !== 'function') return;
     let event = new CustomEvent(type, {
@@ -119,24 +124,24 @@
     });
     target.dispatchEvent(event);
   }
-
-
+  
+  
   // Extend
   // ======
-
+  
   function extend() {
-
+    
     // Variables
     let extended = {};
     let deep = false;
     let i = 0;
-
+    
     // Check if a deep merge
     if (Object.prototype.toString.call(arguments[0]) === '[object Boolean]') {
       deep = arguments[0];
       i++;
     }
-
+    
     // Merge the object into the extended object
     let merge = function (obj) {
       for (let prop in obj) {
@@ -150,50 +155,50 @@
         }
       }
     };
-
+    
     // Loop through each object and conduct a merge
     for (; i < arguments.length; i++) {
       let obj = arguments[i];
       merge(obj);
     }
-
+    
     return extended;
-
+    
   }
-
-
+  
+  
   // See if number is between two values
   // ===================================
-
+  
   Number.prototype.between = function (a, b, inclusive) {
     let min = Math.min(a, b);
     let max = Math.max(a, b);
     return inclusive ? this >= min && this <= max : this > min && this < max;
   };
-
-
+  
+  
   // Get matrix values
   // =================
-
+  
   function getMatrixValues(element, type) {
-
+    
     // Get values
     const style = window.getComputedStyle(element);
     const matrix = style['transform'] || style.webkitTransform || style.mozTransform;
-
+    
     // Return false if no matrix is found
     if (matrix === 'none') return false;
-
+    
     // Prepare object
     let value = {};
-
+    
     // Thanks: https://stackoverflow.com/questions/5107134/find-the-rotation-and-skew-of-a-matrix-transformation
     let calculateMatrixValues = function(a) {
       let angle = Math.atan2(a[1], a[0]),
-          denom = Math.pow(a[0], 2) + Math.pow(a[1], 2),
-          scaleX = Math.sqrt(denom),
-          scaleY = (a[0] * a[3] - a[2] * a[1]) / scaleX || 1,
-          skewX = Math.atan2(a[0] * a[2] + a[1] * a[3], denom);
+        denom = Math.pow(a[0], 2) + Math.pow(a[1], 2),
+        scaleX = Math.sqrt(denom),
+        scaleY = (a[0] * a[3] - a[2] * a[1]) / scaleX || 1,
+        skewX = Math.atan2(a[0] * a[2] + a[1] * a[3], denom);
       return {
         angle: angle / (Math.PI / 180),
         scaleX: scaleX,
@@ -204,10 +209,10 @@
         translateY: a[5]
       };
     };
-
+    
     // Get separate matrix values
     const matrixValues = calculateMatrixValues(matrix.match(/matrix.*\((.+)\)/)[1].split(', '));
-
+    
     // Return values
     if (type === 'translate') {
       value.value = {
@@ -233,20 +238,20 @@
         unit: 'deg'
       }
     }
-
+    
     // Get and set delay and duration
     element.removeAttribute('style');
     value.delay = getTransitionValue('transitionDelay', style, 'transform');
     value.duration = getTransitionValue('transitionDuration', style, 'transform');
-
+    
     // Return
     return value;
   }
-
-
+  
+  
   // Get CSS values
   // ==============
-
+  
   function getCSSValue(element, type) {
     let style = window.getComputedStyle(element);
     let styles = [];
@@ -257,11 +262,11 @@
     styles.duration = getTransitionValue('transitionDuration', style, type);
     return styles;
   }
-
-
+  
+  
   // Get transition value
   // ====================
-
+  
   function getTransitionValue(prop, style, type) {
     let transition = style.transition;
     let transitionValues = style[prop].split(', ');
@@ -273,19 +278,19 @@
     });
     return value;
   }
-
-
+  
+  
   // Get difference
   // ==============
-
+  
   function getDifference(a, b) {
     return Math.abs(a - b)
   }
-
-
+  
+  
   // Get calculations
   // ================
-
+  
   function getCalculations(from, to, dimension) {
     if (!from || !to) return false;
     // Set values
@@ -307,24 +312,24 @@
     }
     return values;
   }
-
-
+  
+  
   // Get transition values
   // =====================
-
+  
   function getTransitionValues(element, target, settings, type) {
-
+    
     // Variables
     let fromValues = {};
     let toValues = {};
     let returnValues = {
       'element': element
     };
-
+    
     // Get initial values
     settings.matrixValues.forEach(function(prop) { fromValues[prop] = (getMatrixValues(element, prop)) });
     settings.cssValues.forEach(function(prop) { fromValues[prop] = (getCSSValue(element, prop)) });
-
+    
     // Emit event
     if (type === 'getValues') {
       emitEvent('calculateFrom', settings, target, {
@@ -333,13 +338,13 @@
         fromValues: fromValues
       });
     }
-
+    
     // Get target values
     element.style.transition = 'none';
     element.classList.toggle(settings.openClass);
     settings.matrixValues.forEach(function(prop) { toValues[prop] = (getMatrixValues(element, prop)) });
     settings.cssValues.forEach(function(prop) { toValues[prop] = (getCSSValue(element, prop)) });
-
+    
     // Emit event
     if (type === 'getValues') {
       emitEvent('calculateTo', settings, target, {
@@ -349,13 +354,13 @@
         toValues: toValues
       });
     }
-
+    
     // Toggle class back
     element.classList.toggle(settings.openClass);
-
+    
     // No transition for movable elements
     element.style.transition = 'none';
-
+    
     // Add properties and values to the object
     settings.matrixValues.forEach(function(el) {
       const elCalculations = getCalculations(fromValues[el], toValues[el], 2);
@@ -371,29 +376,29 @@
         }
       }
     });
-
+    
     return returnValues;
   }
-
-
+  
+  
   // Get target
   // ==========
-
+  
   function getTarget(target, isControl, isSelector, settings) {
-
+    
     // Controls
     let controls = [];
-
+    
     // When target is a controller
     if (isControl) {
-
+      
       // Get controls amount
       isControl.forEach(function(ctrl) {
         if (ctrl.target.classList.contains(settings.openClass)) {
           controls.push(ctrl);
         }
       })
-
+      
       // Set target
       if (controls.length === 1) {
         target = controls[0].target;
@@ -403,12 +408,12 @@
         target = false
       }
     }
-
+    
     // When target is a selector
     if (isSelector) {
       target = isSelector;
     }
-
+    
     // When multiple targets are found, close all applicable targets
     if (!target) {
       controls.forEach(function(ctrl) {
@@ -418,45 +423,45 @@
         }
       })
     }
-
+    
     return target;
   }
-
-
+  
+  
   // Get buddies
   // ===========
-
+  
   function getBuddies(target, settings) {
-
+    
     // Get target buddies list
     let buddylist = document.querySelectorAll(target.getAttribute(settings.buddies)) || false;
     let controlslist = document.querySelectorAll(target.getAttribute(settings.controllers)) || false;
-
+    
     // Push the target itself as a buddy
     buddies.push(target);
-
+    
     // When target has buddies
     if (buddylist.length) {
       buddylist.forEach(function (buddy) {
         buddies.push(buddy);
       });
     }
-
+    
     // Add controls as buddies
     if (controlslist.length) {
       controlslist.forEach(function (buddy) {
         buddies.push(buddy);
       });
     }
-
-
+    
+    
     return buddies;
   }
-
-
+  
+  
   // Get essentials
   // ==============
-
+  
   function getEssentials(transitionValues, settings) {
     let values = {
       'axis': 'x',
@@ -475,17 +480,17 @@
     }
     return values
   }
-
-
+  
+  
   // Get values
   // ==========
-
+  
   function getValues(target, settings) {
-
+    
     // Get transitionValues and return false if calculator styling is not found
     const transitionValues = getTransitionValues(target, target, settings, 'getValues');
     if (!transitionValues[settings.calculator]) return false;
-
+    
     // Return values
     const axis = getEssentials(transitionValues, settings).axis;
     const from = getEssentials(transitionValues, settings).from;
@@ -500,22 +505,22 @@
       'totalDuration': transitionValues[settings.calculator].delay + transitionValues[settings.calculator].duration
     };
   }
-
-
+  
+  
   // Get closest
   // ===========
-
+  
   function getClosest(from, to, translated) {
     let closest = [from, to].reduce(function(prev, curr) {
       return (Math.abs(curr - translated) < Math.abs(prev - translated) ? curr : prev);
     });
     return closest === from ? 'from' : 'to'
   }
-
-
+  
+  
   // Calculate multiplier
   // ====================
-
+  
   function calculateMultiplier(value) {
     let totalDuration = targetValues.totalDuration;
     let factor = (targetValues.axis === 'x' ? ((targetValues.movedX || 0) / (targetValues.difference / 100)) : ((targetValues.movedY || 0) / (targetValues.difference / 100))) / 100;
@@ -536,11 +541,11 @@
       'resetDelay': -Math.abs(delay) * x,
     };
   }
-
-
+  
+  
   // Get remaining delay or duration
   // ===============================
-
+  
   function getRemaining(multiplierRoot, properties, type, click, settings) {
     let value = 0;
     if (type === 'delay') {
@@ -555,11 +560,11 @@
     }
     return value;
   }
-
-
+  
+  
   // Set styling
   // ===========
-
+  
   function setStyling(element, values, target, settings, click, properties) {
     let transforms = [];
     let transitionProperties = [];
@@ -567,11 +572,11 @@
     let transitionDurations = [];
     let multiplierRoot = [];
     let multiplier = 1;
-
-
+    
+    
     // Set transition properties
     // -------------------------
-
+    
     function setTransitionProperties(prop, type, multiplierRoot) {
       if (multiplierRoot.length === 0) return false;
       transitionProperties.push(prop);
@@ -584,7 +589,7 @@
         }
       }
     }
-
+    
     // Loop through matrix values
     settings.matrixValues.forEach(function(prop) {
       if (values[prop] !== undefined) {
@@ -603,18 +608,18 @@
         }
       }
     });
-
+    
     // Set transforms
     if (properties === 'all') {
       transforms = transforms.join(' ');
       element.style.transform = transforms;
     }
-
+    
     // Set transition properties
     else {
       setTransitionProperties('transform', 'translate', multiplierRoot);
     }
-
+    
     // Loop through CSS values
     settings.cssValues.forEach(function(prop) {
       if (prop !== undefined) {
@@ -636,7 +641,7 @@
         }
       }
     });
-
+    
     // Set transition properties
     if (properties !== 'all') {
       element.style.transitionProperty = transitionProperties;
@@ -647,21 +652,21 @@
       }
     }
   }
-
-
+  
+  
   // Transitions following gesture
   // =============================
-
+  
   function transitionWithGesture(element, touchmoveX, touchmoveY, settings) {
-
+    
     // Calculate movedX and movedY
     let movedX = Math.abs(touchmoveX - touchstartX) || 0;
     let movedY = Math.abs(touchmoveY - touchstartY) || 0;
-
+    
     // Add movedX and movedY to targetValues
     targetValues.movedX = movedX;
     targetValues.movedY = movedY;
-
+    
     // Handle buddies
     buddies.forEach(function (buddy) {
       let count = (buddy.element.className.match(/openedby:/g) || []).length;
@@ -670,18 +675,18 @@
       }
     });
   }
-
-
+  
+  
   // Toggle
   // ======
-
+  
   function toggle(target, settings, click, setStyle) {
-
+    
     // Get targetValues if not set yet
     if (targetValues.length === 0) {
       targetValues = getValues(target, settings);
     }
-
+    
     // Get buddies if not set yet
     if (buddies.length === 0) {
       buddies = getBuddies(target, settings);
@@ -689,11 +694,11 @@
         buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
       });
     }
-
+    
     // Reset target and buddies
     resetStyle(target, settings, click, setStyle);
     target.classList.toggle(settings.openClass);
-
+    
     // Handle buddies
     if (buddies.length > 0) {
       buddies.forEach(function(buddy) {
@@ -708,12 +713,12 @@
         }
       });
     }
-
+    
     // Set aria for controller
     document.querySelectorAll(target.getAttribute(settings.controllers)).forEach(function(control) {
       setAria(control, settings);
     });
-
+    
     // Emit event
     emitEvent('toggle', settings, target, {
       settings: settings,
@@ -722,11 +727,11 @@
       buddies: buddies
     });
   }
-
-
+  
+  
   // Reset styling
   // =============
-
+  
   function resetStyle(target, settings, click, setStyle) {
     target.removeAttribute('style');
     if (buddies) {
@@ -738,11 +743,11 @@
       });
     }
   }
-
-
+  
+  
   // Set aria attributes to buttons
   // ==============================
-
+  
   function setAria(button, settings) {
     if (button.tagName === 'BUTTON') {
       if (button.classList.contains(settings.openClass)) {
@@ -752,94 +757,100 @@
       }
     }
   }
-
-
+  
+  
   // Remove class by prefix
   // ======================
-
+  
   function removeClassByPrefix(el, prefix) {
     var regex = new RegExp('\\b' + prefix + '[^ ]*[ ]?\\b', 'g');
     el.className = el.className.replace(regex, '');
     return el;
   }
-
-
+  
+  
   /**
    * Constructor
    */
-
+  
   return function(selector, options) {
-
+    
     // Unique Variables
     const publicAPIs = {};
     let selectors = [];
     let settings;
-    let target;
+    let target = false;
     let hasActive = false;
-
-
+    let isMoving = 0;
+    
+    
     // Handle finished gesture
     // =======================
-
-    function handleGesture(target, moveDirection, settings) {
-
+    
+    function handleGesture(target, moveDirection, settings, isPublic) {
+      
       // remove the bip busy class so user can select again
       document.body.classList.remove('bip-busy');
-
+      
       // Variables
       let click = ((touchstartX === touchendX && touchstartY === touchendY));
       let go = true;
-
+      
       // Return false if element is noswipe element and user didn't click
       if (noswipe && !click) return false;
-
+      
       // Get targetValues if non defined
       if (targetValues.length === 0 && click) {
         targetValues = getValues(target, settings);
       }
-
+      
       // Variables
       const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
       const threshold = targetValues.difference * settings.threshold;
-
+      
       // Add / remove classes
       target.classList.add(settings.transitioningClass);
       target.classList.remove(settings.touchmoveClass);
-      if (!click) { document.body.classList.remove('has-touchmove'); }
-
+      if (!click) { document.body.classList.remove(settings.hasTouchmoveClass); }
+      
       // Set "go" variable depending on settings
       if (click && settings.swipeOnly) { go = false; }
       if (!click && settings.clickOnly) { go = false; }
       if (click && noclick) { go = false; }
       if (noswipe && ((touchstartX !== touchendX || touchstartY !== touchendY))) { go = false; }
-
+      
       // See if eventTarget is a controller
       let isController = false;
-      if (eventTarget.closest(target.getAttribute(settings.controllers))) {
+      if (eventTarget && eventTarget.closest(target.getAttribute(settings.controllers))) {
         isController = true;
       }
-
+      
       // Either toggle or reset
-      if (go && (isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
+      if (go && (isPublic || isController || ((touchstartX !== touchendX || touchstartY !== touchendY)))) {
         if ((diff > threshold && moveDirection === 'forward') || diff === 0) {
           toggle(target, settings, click, true);
         } else {
           resetStyle(target, settings, click, true);
         }
       }
-
+      
       // Close current open one if accordion is true
-      if (settings.accordion && (hasActive && hasActive !== target)) {
+      if (target.hasAttribute(settings.accordion) && (hasActive && hasActive !== target && hasActive.hasAttribute(settings.accordion))) {
         buddies = [];
         toggle(hasActive, settings, true, true);
       }
-
+      
       // Remove transitioning class when finalDuration is over
       setTimeout(function() {
         target.classList.remove(settings.transitioningClass);
         touchstart = false;
         hasActive = false;
-
+        
+        // Remove open class from the body
+        if (document.querySelectorAll('[class*="openedby:"]').length === 0) {
+          document.body.classList.remove(settings.hasOpenClass);
+        }
+        
         // Emit event
         emitEvent('finish', settings, target, {
           settings: settings,
@@ -849,85 +860,101 @@
         });
       }, targetValues.finalDuration);
     }
-
-
+    
+    
     // Start handler
     // =============
-
+    
     function startHandler(event) {
-
+      
       // Set eventTarget
       eventTarget = event.target;
-
+      isMoving = 0;
+      
       // Targets
       let isControl = [];
       let isSelector = eventTarget.closest(selector) || false;
-
+      
       // Selectors
       selectors.forEach(function(el) {
-
+        
         // See if we already have an open element
         if (el.target.classList.contains(settings.openClass)) {
           hasActive = el.target;
         }
-
+        
         // See if element is a "close" target
         if (eventTarget.closest(el.controls)) {
           isControl.push(el);
         }
       });
-
+      
       // See if element is an ignore, noswipe or noclick element
       ignore = !!eventTarget.closest('[' + settings.ignore + ']') || false;
       noswipe = !!eventTarget.closest('[' + settings.noswipe + ']') || false;
       noclick = !!eventTarget.closest('[' + settings.noclick + ']') || false;
-
+      
       // Return false if ignore
       if (ignore) return false;
-
+      
       // Set target
-      target = getTarget(target, isControl, isSelector, settings);
-
+      if (eventTarget.closest('['+settings.controls+']')) {
+        let controlTarget = eventTarget.closest('['+settings.controls+']').getAttribute(settings.controls);
+        target = getTarget(target, false, document.querySelector('['+settings.id+'="'+controlTarget+'"]'));
+      } else {
+        target = getTarget(target, isControl, isSelector, settings);
+      }
+      
       // Return false if applicable
       if (!target) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
-
+      
       // Reset values for new touchstart event
       resetValues();
-
-      // Prevent Default
-      if (!noswipe && !noclick) { event.preventDefault(); }
-
+      
       // Movement variables
       touchstartX = event.screenX || event.changedTouches[0].screenX;
       touchstartY = event.screenY || event.changedTouches[0].screenY;
       touchstart = true;
-
+      
+      // Add open class to the body
+      document.body.classList.add(settings.hasOpenClass);
+      
       // Emit event
       emitEvent('start', settings, target, {
         settings: settings,
         target: target
       });
     }
-
-
+    
+    
     // Move handler
     // ============
-
+    
     function moveHandler(event) {
-
+      
       // Return false if applicable
       if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
       if (noswipe) return false;
-
+      
+      // Return false if closeOnly is set
+      if (settings.closeOnly && !target.classList.contains(settings.openClass)) return false;
+      
+      // Get current move positions
+      let touchmoveX = event.screenX || (event.changedTouches ? event.changedTouches[0].screenX : false);
+      let touchmoveY = event.screenY || (event.changedTouches ? event.changedTouches[0].screenY : false);
+      
+      // Return false if not moved
+      if (touchstartX === touchmoveX || touchstartY === touchmoveY) return false;
+      
       // Get target values
       if (targetValues.length === 0) {
         targetValues = getValues(target, settings);
       }
-
+      
       // Get buddies and values
       if (buddies.length === 0) {
         buddies = getBuddies(target, settings) || false;
@@ -935,73 +962,111 @@
           buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
         });
       }
-
-      // Disable styling and disable user-select
-      if (!settings.clickOnly && !document.body.classList.contains('bip-busy')) {
-        document.body.classList.add('bip-busy');
-      }
-
-      // Set touchmove class
-      if (!target.classList.contains(settings.touchmoveClass)) {
-        target.classList.add(settings.touchmoveClass);
-      }
-
-      // Prevent default scrolling on touch devices
-      event.preventDefault();
-
-      // Add has-touchmove class to body
-      if (!document.body.classList.contains('has-touchmove') && event.type === 'touchmove') {
-        document.body.classList.add('has-touchmove');
-      }
-
+      
       // Variables
-      let touchmoveX = event.screenX || (event.changedTouches ? event.changedTouches[0].screenX : false);
-      let touchmoveY = event.screenY || (event.changedTouches ? event.changedTouches[0].screenY : false);
       let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.from) : false;
       let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.from) : false;
       let translated = (targetValues.axis === 'x') ? translatedX : translatedY;
       let difference = (targetValues.axis === 'x') ? getDifference(touchstartX, touchmoveX) : getDifference(touchstartY, touchmoveY);
       let closest = getClosest(targetValues.from, targetValues.to, translated);
       let isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.from, targetValues.to, true) : translatedY.between(targetValues.from, targetValues.to, true);
-
-      // Set last difference
-      if ((getDifference(difference, lastDifference) > settings.difference) || lastDifference === false) {
-        lastDifference = difference
+      
+      // Check if move is approved and set isMoving variable
+      const scrollables = target.querySelectorAll('['+settings.scrollable+']');
+      if (isMoving === 0) {
+        if (targetValues.axis === 'x') {
+          if (difference > 1) {
+            if ((Math.abs(touchmoveX - touchstartX) < Math.abs(touchmoveY - touchstartY)) && !document.body.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
+            else { isMoving = 1}
+          }
+          if (scrollables.length > 0 && target.classList.contains(settings.openClass)) {
+            scrollables.forEach(function(scrollable) {
+              if (eventTarget.closest('['+settings.scrollable+']') === scrollable && scrollable.scrollWidth > scrollable.clientWidth) {
+                isMoving = -1;
+              }
+            })
+          }
+        }
+        
+        if (targetValues.axis === 'y') {
+          if (difference > 1) {
+            if ((Math.abs(touchmoveX - touchstartX) > Math.abs(touchmoveY - touchstartY)) && !document.body.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
+            else { isMoving = 1}
+          }
+          if (scrollables.length > 0 && target.classList.contains(settings.openClass)) {
+            scrollables.forEach(function(scrollable) {
+              if (eventTarget.closest('['+settings.scrollable+']') === scrollable && scrollable.scrollHeight > scrollable.clientHeight) {
+                isMoving = -1;
+              }
+            })
+          }
+        }
       }
-
-      // Set move direction
-      if (isBetween && difference > lastDifference) {
-        moveDirection = 'forward';
-      } else if (isBetween && difference < lastDifference) {
-        moveDirection = 'backward';
-      }
-
-      // Transition
-      if (!isBetween && closest === 'from') {
-        targetValues.axis === 'x' ? touchmoveX = touchstartX : touchmoveY = touchstartY;
-        moveDirection = 'backward';
-      } else if (!isBetween && closest === 'to') {
-        moveDirection = 'forward';
-      }
-
-      // Smoother transitions by using requestAnimationframe
-      if (!noswipe) {
-        transitionWithGesture(target, touchmoveX, touchmoveY, settings);
+      
+      // Only run when move direction equals target direction
+      if (isMoving === 1) {
+        
+        // Prevent default scroll behavior
+        event.preventDefault();
+        
+        // Disable styling and disable user-select
+        if (!settings.clickOnly && !document.body.classList.contains('bip-busy')) {
+          document.body.classList.add('bip-busy');
+        }
+        
+        // Set touchmove class
+        if (!target.classList.contains(settings.touchmoveClass)) {
+          target.classList.add(settings.touchmoveClass);
+        }
+        
+        // Add has-touchmove class to body
+        if (!document.body.classList.contains(settings.hasTouchmoveClass) && event.type === 'touchmove') {
+          document.body.classList.add(settings.hasTouchmoveClass);
+        }
+        
+        // Set last difference
+        if ((getDifference(difference, lastDifference) > settings.difference) || lastDifference === false) {
+          lastDifference = difference
+        }
+        
+        // Set move direction
+        if (isBetween && difference > lastDifference) {
+          moveDirection = 'forward';
+        } else if (isBetween && difference < lastDifference) {
+          moveDirection = 'backward';
+        }
+        
+        // Transition
+        if (!isBetween && closest === 'from') {
+          targetValues.axis === 'x' ? touchmoveX = touchstartX : touchmoveY = touchstartY;
+          moveDirection = 'backward';
+        } else if (!isBetween && closest === 'to') {
+          moveDirection = 'forward';
+        }
+        
+        // Swipe if applicable
+        if (!noswipe && difference > 1) {
+          transitionWithGesture(target, touchmoveX, touchmoveY, settings);
+        }
       }
     }
-
-
+    
+    
     // End handler
     // ===========
-
+    
     function endHandler(event) {
-
+      
       // Return false if applicable
       if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
+      if (isMoving <= 0) return false;
       if (target.classList.contains(settings.transitioningClass)) return false;
-
+      
+      // Prevent default
+      event.preventDefault();
+      
       // Variables
       if (event.type === 'touchend') {
         touchendX = event.changedTouches[0].screenX;
@@ -1010,7 +1075,7 @@
         touchendX = event.screenX;
         touchendY = event.screenY;
       }
-
+      
       // Emit event
       emitEvent('end', settings, target, {
         settings: settings,
@@ -1018,27 +1083,65 @@
         targetValues: targetValues,
         buddies: buddies
       });
-
+      
       // Handle touch gesture
-      handleGesture(target, moveDirection, settings);
+      handleGesture(target, moveDirection, settings, false);
     }
-
+    
+    
+    // Click handler
+    // =============
+    
+    function clickHandler(event) {
+      
+      // Set eventTarget
+      eventTarget = event.target;
+      const isControl = eventTarget.closest('[data-touch-controls]');
+      let doRun = false;
+      
+      // Return if no control
+      if (!isControl) return false;
+      
+      // Get target
+      target = document.querySelector('[data-touch-id='+isControl.getAttribute('data-touch-controls')+']');
+      
+      // Rteurn
+      document.querySelectorAll(selector).forEach((el) => {
+        if (target === el) {
+          doRun = true;
+          return
+        }
+      });
+      
+      if (!doRun) return false;
+      
+      // Toggle target
+      toggle(target, settings, true, false);
+      
+      // Emit event
+      emitEvent('clickToggle', settings, target, {
+        settings: settings,
+        target: target
+      });
+    }
+    
+    
     /**
      * Toggle
      */
-
-    publicAPIs.toggle = function (target) {
+    
+    publicAPIs.toggle = function(target) {
       resetValues();
-      handleGesture(target, moveDirection, settings);
+      toggle(target, settings, true, false);
     };
-
-
+    
+    
     /**
      * Destroy
      */
-
+    
     publicAPIs.destroy = function () {
-
+      
       // Remove eventlisteners
       document.removeEventListener('touchstart', startHandler, false);
       if (!settings.clickOnly) { document.removeEventListener('touchmove', moveHandler, false); }
@@ -1046,10 +1149,11 @@
       document.removeEventListener('mousedown', startHandler, false);
       if (settings.clickDrag && !settings.clickOnly) {  document.removeEventListener('mousemove', moveHandler, false); }
       document.removeEventListener('mouseup', endHandler, false);
-
+      document.removeEventListener('click', clickHandler, false);
+      
       // Remove body classes
-      document.body.classList.remove('bip-busy', 'has-touchmove');
-
+      document.body.classList.remove('bip-busy', settings.hasTouchmoveClass);
+      
       // Cleanup elements
       function clean(element) {
         element.style.transition = 'none';
@@ -1057,7 +1161,7 @@
         element.removeAttribute('style');
         removeClassByPrefix(element, 'openedby');
       }
-
+      
       // Remove styling from all selectors, controllers and buddies
       selectors.forEach(function(selector) {
         clean(selector.target);
@@ -1069,39 +1173,41 @@
           clean(buddy);
         });
       })
-
+      
       // Reset settings
       settings = null;
     };
-
-
+    
+    
     /**
      * Init
      */
-
+    
     publicAPIs.init = function(options) {
-
+      
       // feature test
       if (!supports) return;
-
+      
       // Merge options into defaults
       settings = extend(defaults, options || {});
-
+      
       // Grab all selectors
       document.querySelectorAll(selector).forEach(function(el, i) {
-        el.setAttribute(settings.id, selector.replace(/\W/g, '') + i);
+        const selectorId = selector.replace(/\W/g, '') + i;
+        el.setAttribute(settings.id, selectorId);
         selectors[i] = {
           'target': el,
           'controls': el.getAttribute(settings.controllers),
           'buddies': el.getAttribute(settings.buddies)
         };
-
+        
         // Set default aria for each controller
         document.querySelectorAll(el.getAttribute(settings.controllers)).forEach(function(control) {
           setAria(control, settings);
+          control.setAttribute(settings.controls, selectorId);
         });
       });
-
+      
       // Add event listeners
       document.addEventListener('touchstart', startHandler, {passive: false});
       if (!settings.clickOnly) { document.addEventListener('touchmove', moveHandler, {passive: false}); }
@@ -1109,7 +1215,8 @@
       document.addEventListener('mousedown', startHandler, false);
       if (settings.clickDrag && !settings.clickOnly) { document.addEventListener('mousemove', moveHandler, false); }
       document.addEventListener('mouseup', endHandler, false);
-
+      document.addEventListener('click', clickHandler, false);
+      
       // Emit event
       document.querySelectorAll(selector).forEach(function(el) {
         emitEvent('init', settings, el, {
@@ -1118,20 +1225,20 @@
         });
       });
     }
-
+    
     // Initialize the plugin
     publicAPIs.init(options);
-
+    
     // Events
     publicAPIs.on = function (type, callback) {
       document.querySelectorAll(selector).forEach(function(el) {
         el.addEventListener(type, callback, false);
       });
     };
-
+    
     // Return the public APIs
     return publicAPIs;
-
+    
   };
-
+  
 });

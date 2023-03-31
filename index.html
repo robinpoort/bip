@@ -80,8 +80,8 @@
         z-index: 3;
     }
 
-    .top button,
-    .bottom button {
+    .top .controlTop,
+    .bottom .controlBottom {
         position: absolute;
         left: calc(50% - 2rem);
         width: 4rem;
@@ -92,7 +92,7 @@
         transform: translateY(-100%);
     }
 
-    .top button {
+    .top .controlTop {
         top: 100%;
     }
 
@@ -102,7 +102,7 @@
         box-shadow: 0 0 10px 0 rgba(0,0,0,.2);
     }
 
-    .bottom button {
+    .bottom .controlBottom {
         top: 0;
     }
 
@@ -128,8 +128,8 @@
         z-index: 3;
     }
 
-    .right button,
-    .left button {
+    .right .controlRight,
+    .left .controlLeft {
         position: absolute;
         top: 0;
     }
@@ -139,7 +139,7 @@
         transform: translateX(100%);
     }
 
-    .right button {
+    .right .controlRight {
         right: 100%;
     }
 
@@ -149,7 +149,7 @@
         transform: translateX(-100%);
     }
 
-    .left button {
+    .left .controlLeft {
         left: 100%;
     }
 
@@ -312,6 +312,26 @@
         max-width: 800px;
         margin: auto;
     }
+
+    .nested {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: red;
+        transform: translateX(-100%);
+        transition: transform 200ms;
+    }
+
+    .nested.is-open {
+        transform: translateX(0);
+    }
+
+    [data-touch-scrollable] {
+        max-height: 100%;
+        overflow: auto;
+    }
 </style>
 <body>
 
@@ -329,8 +349,9 @@
                 <h4>Left & right slide menus</h4>
                 <p>Open and close by clicking buttons or swipe/drag.</p>
             </div>
-            <div class="overlay" data-touch-id="sidemenu-overlay"></div>
-            <div class="right" data-touch data-touch-controllers=".controlRight, [data-touch-id=sidemenu-overlay]" data-touch-buddies=".burger1Right, .burger2Right, .burger3Right">
+            <div class="overlay" data-overlay-right></div>
+            <div class="overlay" data-overlay-left></div>
+            <div class="right" data-touch data-touch-controllers=".controlRight, [data-overlay-right]" data-touch-buddies=".burger1Right, .burger2Right, .burger3Right">
                 <button class="controlRight" type="button">
                     <span class="hamburger">
                         <span class="burger1 burger1Right"></span>
@@ -343,7 +364,7 @@
                 <p>Right details</p>
                 <p>Right details</p>
             </div>
-            <div class="left" data-touch data-touch-controllers=".controlLeft, [data-touch-id=sidemenu-overlay]" data-touch-buddies=".burger1Left, .burger2Left, .burger3Left">
+            <div class="left" data-touch data-touch-controllers=".controlLeft, [data-overlay-left]" data-touch-buddies=".burger1Left, .burger2Left, .burger3Left">
                 <button class="controlLeft" type="button">
                     <span class="hamburger">
                         <span class="burger1 burger1Left"></span>
@@ -351,10 +372,15 @@
                         <span class="burger3 burger3Left"></span>
                     </span>
                 </button>
-                <h1>Left</h1>
-                <p>Left details</p>
-                <p>Left details</p>
-                <p>Left details</p>
+                <div data-touch-scrollable>
+                    <h1>Left</h1>
+                    <p>Left details</p>
+                    <p>Left details</p>
+                    <p>Left details</p>
+                    <p>Left details</p>
+                    <p>Left details</p>
+                    <p>Left details</p>
+                </div>
             </div>
         </div>
     </div>
@@ -365,20 +391,30 @@
                 <h4>Top and bottom drawers</h4>
                 <p>Open and close by clicking buttons or swipe/drag.</p>
             </div>
-            <div class="overlay" data-touch-id="drawer-overlay"></div>
-            <div class="top" data-touch data-touch-controllers=".controlTop, [data-touch-id=drawer-overlay]" data-touch-buddies=".arrow1top, .arrow2top">
+            <div class="overlay"></div>
+            <div class="overlay" data-overlay-top></div>
+            <div class="overlay" data-overlay-bottom></div>
+            <div class="top" data-touch data-touch-controllers=".controlTop, [data-overlay-top]" data-touch-buddies=".arrow1top, .arrow2top">
                 <button class="controlTop" type="button">
                     <span class="arrow">
                         <span class="arrow1 arrow1top"></span>
                         <span class="arrow2 arrow2top"></span>
                     </span>
                 </button>
-                <h1>Top</h1>
-                <p>Top details</p>
-                <p>Top details</p>
-                <p>Top details</p>
+                <div data-touch-scrollable>
+                    <h1>Top</h1>
+                    <p>Top details</p>
+                    <p>Top details</p>
+                    <p>Top details</p>
+                </div>
+                <div>
+                    <button class="controlNested" type="button">Open</button>
+                    <div class="nested" data-touch data-touch-controllers=".controlNested">
+                        Some nested thing
+                    </div>
+                </div>
             </div>
-            <div class="bottom" data-touch data-touch-controllers=".controlBottom, [data-touch-id=drawer-overlay]" data-touch-buddies=".arrow1bottom, .arrow2bottom">
+            <div class="bottom" data-touch data-touch-controllers=".controlBottom, [data-overlay-bottom]" data-touch-buddies=".arrow1bottom, .arrow2bottom">
                 <button class="controlBottom" type="button">
                     <span class="arrow">
                         <span class="arrow1 arrow1bottom"></span>
