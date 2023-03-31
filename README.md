@@ -142,6 +142,9 @@ Disable clicks. Only swipe (or drag) will work. (default: `false`)
 ### clickOnly
 Disable swipes. Only click will work. (default: `false`)
 
+### closeOnly
+Disable open swipes. Only closing swipes will work. (default: `false`)
+
 ### emitEvents
 Whether to emit events or not. (default: `true`)
 
@@ -224,6 +227,15 @@ fired when toggled. Access to: settings, target, targetValues, buddies
 ```js
 bip.on('toggle', function (e) {
     console.log('toggle', e.detail);
+}, false);
+```
+
+### clickToggle
+fired when click event happens. Access to: settings, target
+
+```js
+bip.on('clickToggle', function (e) {
+    console.log('clickToggle', e.detail);
 }, false);
 ```
 
