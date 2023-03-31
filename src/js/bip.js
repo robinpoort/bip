@@ -682,6 +682,9 @@
   
   function toggle(target, settings, click, setStyle) {
     
+    // Get open or close type
+    const type = target.classList.contains(settings.openClass) ? 'close' : 'open';
+    
     // Get targetValues if not set yet
     if (targetValues.length === 0) {
       targetValues = getValues(target, settings);
@@ -718,6 +721,11 @@
     document.querySelectorAll(target.getAttribute(settings.controllers)).forEach(function(control) {
       setAria(control, settings);
     });
+    
+    // Remove body class
+    if (type === 'close') {
+      document.body.classList.remove(settings.hasOpenClass);
+    }
     
     // Emit event
     emitEvent('toggle', settings, target, {
