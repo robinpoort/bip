@@ -797,9 +797,6 @@
     
     function handleGesture(target, moveDirection, settings, isPublic) {
       
-      // remove the bip busy class so user can select again
-      document.body.classList.remove('bip-busy');
-      
       // Variables
       let click = ((touchstartX === touchendX && touchstartY === touchendY));
       let go = true;
@@ -851,7 +848,6 @@
       // Remove transitioning class when finalDuration is over
       setTimeout(function() {
         target.classList.remove(settings.transitioningClass);
-        touchstart = false;
         hasActive = false;
         
         // Remove open class from the body
@@ -958,6 +954,9 @@
       // Return false if not moved
       if (touchstartX === touchmoveX || touchstartY === touchmoveY) return false;
       
+      // Prevent default behavior
+      event.preventDefault();
+      
       // Get target values
       if (targetValues.length === 0) {
         targetValues = getValues(target, settings);
@@ -1014,9 +1013,6 @@
       // Only run when move direction equals target direction
       if (isMoving === 1) {
         
-        // Prevent default scroll behavior
-        event.preventDefault();
-        
         // Disable styling and disable user-select
         if (!settings.clickOnly && !document.body.classList.contains('bip-busy')) {
           document.body.classList.add('bip-busy');
@@ -1065,8 +1061,13 @@
     
     function endHandler(event) {
       
+      // Reset touchstart
+      touchstart = false;
+      
+      // remove the bip busy class so user can select again
+      document.body.classList.remove('bip-busy');
+      
       // Return false if applicable
-      if (!touchstart) return false;
       if (!target) return false;
       if (ignore) return false;
       if (isMoving <= 0) return false;
@@ -1101,6 +1102,9 @@
     // =============
     
     function clickHandler(event) {
+      
+      // Return false if moved
+      if (isMoving >= 1) return false;
       
       // Set eventTarget
       eventTarget = event.target;
