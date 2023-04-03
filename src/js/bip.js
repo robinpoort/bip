@@ -70,8 +70,8 @@
   let noswipe = false;
   let noclick = false;
   let bipValues = {};
-  
-  
+
+
   // Reset values
   // ============
   
@@ -825,7 +825,7 @@
     let target = false;
     let hasActive = false;
     let isMoving = 0;
-  
+    
   
     // Handle finished gesture
     // =======================
@@ -1176,6 +1176,19 @@
         recalculateValues(el, settings);
       });
     }, 500);
+  
+  
+    // Observer
+    // ========
+  
+    const observerCallback = (mutationList) => {
+      for (const mutation of mutationList) {
+        if (mutation.type === "childList") {
+          recalculateValues(mutation.target.closest('['+settings.id+']'), settings);
+        }
+      }
+    };
+    const observer = new MutationObserver(observerCallback);
     
     
     /**
@@ -1203,6 +1216,7 @@
       document.removeEventListener('mouseup', endHandler, false);
       document.removeEventListener('click', clickHandler, false);
       document.removeEventListener('resize', calculateOnDebounce);
+      observer.disconnect();
       
       // Remove body classes
       document.body.classList.remove('bip-busy', settings.hasTouchmoveClass);
@@ -1273,15 +1287,7 @@
           control.setAttribute(settings.controls, selectorId);
         });
         
-        // Observe content changes
-        const callback = (mutationList) => {
-          for (const mutation of mutationList) {
-            if (mutation.type === "childList") {
-              recalculateValues(el, settings);
-            }
-          }
-        };
-        const observer = new MutationObserver(callback);
+        // Observe changes
         observer.observe(el, {attributes: false, childList: true, subtree: true});
       });
       
