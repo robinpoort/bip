@@ -35,6 +35,7 @@
     calculator: 'translate',
     threshold: 0.2,
     difference: 10,
+    minEndDuration: 100,
     maxEndDuration: 500,
     
     openClass: 'is-open',
@@ -68,6 +69,7 @@
   let ignore = false;
   let noswipe = false;
   let noclick = false;
+  let bipValues = {};
   
   
   // Reset values
@@ -164,6 +166,20 @@
     
     return extended;
     
+  }
+  
+  
+  // Debounce
+  // ========
+  
+  const debounce = (callback, wait) => {
+    let timeoutId = null;
+    return (...args) => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        callback.apply(null, args);
+      }, wait);
+    };
   }
   
   
@@ -384,10 +400,11 @@
   // Get target
   // ==========
   
-  function getTarget(target, isControl, isSelector, settings) {
+  function getTarget(isControl, isSelector, settings) {
     
     // Controls
     let controls = [];
+    let target;
     
     // When target is a controller
     if (isControl) {
@@ -433,6 +450,9 @@
   
   function getBuddies(target, settings) {
     
+    // Reset buddies
+    buddies = [];
+    
     // Get target buddies list
     let buddylist = document.querySelectorAll(target.getAttribute(settings.buddies)) || false;
     let controlslist = document.querySelectorAll(target.getAttribute(settings.controllers)) || false;
@@ -453,7 +473,6 @@
         buddies.push(buddy);
       });
     }
-    
     
     return buddies;
   }
@@ -554,8 +573,12 @@
     if (type === 'duration') {
       value = Math.max(0, Math.min(properties !== 'all' && moveDirection === 'forward' ? multiplierRoot.toggleDuration : multiplierRoot.resetDuration, multiplierRoot.duration))
     }
+    // When minEndDuration is set
+    if (type === 'duration' && settings.minEndDuration && settings.minEndDuration < settings.maxEndDuration && settings.minEndDuration > value && !click) {
+      value = settings.minEndDuration;
+    }
     // When maxEndDuration is set
-    if (type === 'duration' && settings.maxEndDuration && settings.maxEndDuration < targetValues.totalDuration && !click) {
+    else if (type === 'duration' && settings.maxEndDuration && settings.maxEndDuration < targetValues.totalDuration && !click) {
       value = value * (settings.maxEndDuration / targetValues.totalDuration);
     }
     return value;
@@ -677,6 +700,22 @@
   }
   
   
+  // Recalculate BipValues
+  // =====================
+  
+  function recalculateValues(target, settings) {
+    const bipValuesId = bipValues[target.getAttribute(settings.id)].id;
+    buddies = [];
+    buddies = getBuddies(target, settings) || false;
+    buddies.forEach(function(buddy, i) {
+      buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
+    });
+    // Save values
+    bipValues[bipValuesId].values = getValues(target, settings);
+    bipValues[bipValuesId].buddies = buddies;
+  }
+  
+  
   // Toggle
   // ======
   
@@ -685,18 +724,9 @@
     // Get open or close type
     const type = target.classList.contains(settings.openClass) ? 'close' : 'open';
     
-    // Get targetValues if not set yet
-    if (targetValues.length === 0) {
-      targetValues = getValues(target, settings);
-    }
-    
-    // Get buddies if not set yet
-    if (buddies.length === 0) {
-      buddies = getBuddies(target, settings);
-      buddies.forEach(function (buddy, i) {
-        buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
-      });
-    }
+    // Get targetValues
+    targetValues = bipValues[target.getAttribute(settings.id)].values;
+    buddies = bipValues[target.getAttribute(settings.id)].buddies;
     
     // Reset target and buddies
     resetStyle(target, settings, click, setStyle);
@@ -726,6 +756,11 @@
     if (type === 'close') {
       document.body.classList.remove(settings.hasOpenClass);
     }
+    
+    // Recalculate values after toggle
+    setTimeout(() => {
+      recalculateValues(target, settings);
+    }, bipValues[target.getAttribute(settings.id)].values.duration)
     
     // Emit event
     emitEvent('toggle', settings, target, {
@@ -790,8 +825,8 @@
     let target = false;
     let hasActive = false;
     let isMoving = 0;
-    
-    
+  
+  
     // Handle finished gesture
     // =======================
     
@@ -804,10 +839,8 @@
       // Return false if element is noswipe element and user didn't click
       if (noswipe && !click) return false;
       
-      // Get targetValues if non defined
-      if (targetValues.length === 0 && click) {
-        targetValues = getValues(target, settings);
-      }
+      // Get targetValues
+      targetValues = bipValues[target.getAttribute(settings.id)].values;
       
       // Variables
       const diff = (targetValues.axis === 'x') ? getDifference(touchendX, touchstartX) : getDifference(touchendY, touchstartY);
@@ -844,7 +877,7 @@
         buddies = [];
         toggle(hasActive, settings, true, true);
       }
-      
+  
       // Remove transitioning class when finalDuration is over
       setTimeout(function() {
         target.classList.remove(settings.transitioningClass);
@@ -854,6 +887,9 @@
         if (document.querySelectorAll('[class*="openedby:"]').length === 0) {
           document.body.classList.remove(settings.hasOpenClass);
         }
+  
+        // RecalculateValues
+        recalculateValues(target, settings);
         
         // Emit event
         emitEvent('finish', settings, target, {
@@ -904,9 +940,9 @@
       // Set target
       if (eventTarget.closest('['+settings.controls+']')) {
         let controlTarget = eventTarget.closest('['+settings.controls+']').getAttribute(settings.controls);
-        target = getTarget(target, false, document.querySelector('['+settings.id+'="'+controlTarget+'"]'));
+        target = getTarget(false, document.querySelector('['+settings.id+'="'+controlTarget+'"]'), settings);
       } else {
-        target = getTarget(target, isControl, isSelector, settings);
+        target = getTarget(isControl, isSelector, settings);
       }
       
       // Return false if applicable
@@ -920,6 +956,10 @@
       touchstartX = event.screenX || event.changedTouches[0].screenX;
       touchstartY = event.screenY || event.changedTouches[0].screenY;
       touchstart = true;
+      
+      // Get target, buddies and values
+      targetValues = bipValues[target.getAttribute(settings.id)].values;
+      buddies = bipValues[target.getAttribute(settings.id)].buddies;
       
       // Add open class to the body
       document.body.classList.add(settings.hasOpenClass);
@@ -956,19 +996,6 @@
       
       // Prevent default behavior
       event.preventDefault();
-      
-      // Get target values
-      if (targetValues.length === 0) {
-        targetValues = getValues(target, settings);
-      }
-      
-      // Get buddies and values
-      if (buddies.length === 0) {
-        buddies = getBuddies(target, settings) || false;
-        buddies.forEach(function (buddy, i) {
-          buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
-        });
-      }
       
       // Variables
       let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.from) : false;
@@ -1114,14 +1141,15 @@
       // Return if no control
       if (!isControl) return false;
       
-      // Get target
-      target = document.querySelector('[data-touch-id='+isControl.getAttribute('data-touch-controls')+']');
+      // Get values
+      target = document.querySelector('['+settings.id+'='+isControl.getAttribute('data-touch-controls')+']');
+      targetValues = bipValues[target.getAttribute(settings.id)].values;
+      buddies = bipValues[target.getAttribute(settings.id)].buddies;
       
-      // Rteurn
+      // Return
       document.querySelectorAll(selector).forEach((el) => {
         if (target === el) {
           doRun = true;
-          return
         }
       });
       
@@ -1133,9 +1161,21 @@
       // Emit event
       emitEvent('clickToggle', settings, target, {
         settings: settings,
-        target: target
+        target: target,
+        targetValues: targetValues,
+        buddies: buddies
       });
     }
+  
+  
+    // Calculate on debounce
+    // =====================
+    
+    const calculateOnDebounce = debounce((ev) => {
+      document.querySelectorAll(selector).forEach(function(el) {
+        recalculateValues(el, settings);
+      });
+    }, 500);
     
     
     /**
@@ -1162,6 +1202,7 @@
       if (settings.clickDrag && !settings.clickOnly) {  document.removeEventListener('mousemove', moveHandler, false); }
       document.removeEventListener('mouseup', endHandler, false);
       document.removeEventListener('click', clickHandler, false);
+      document.removeEventListener('resize', calculateOnDebounce);
       
       // Remove body classes
       document.body.classList.remove('bip-busy', settings.hasTouchmoveClass);
@@ -1213,11 +1254,35 @@
           'buddies': el.getAttribute(settings.buddies)
         };
         
+        // Set initial values
+        buddies = getBuddies(el, settings) || false;
+        buddies.forEach(function(buddy, i) {
+          buddies[i] = (getTransitionValues(buddy, el, settings, 'buddyValues'));
+        });
+        
+        // Save values
+        bipValues[selectorId] = {
+          "id": selectorId,
+          "values": getValues(el, settings),
+          "buddies": buddies
+        };
+        
         // Set default aria for each controller
         document.querySelectorAll(el.getAttribute(settings.controllers)).forEach(function(control) {
           setAria(control, settings);
           control.setAttribute(settings.controls, selectorId);
         });
+        
+        // Observe content changes
+        const callback = (mutationList) => {
+          for (const mutation of mutationList) {
+            if (mutation.type === "childList") {
+              recalculateValues(el, settings);
+            }
+          }
+        };
+        const observer = new MutationObserver(callback);
+        observer.observe(el, {attributes: false, childList: true, subtree: true});
       });
       
       // Add event listeners
@@ -1228,6 +1293,7 @@
       if (settings.clickDrag && !settings.clickOnly) { document.addEventListener('mousemove', moveHandler, false); }
       document.addEventListener('mouseup', endHandler, false);
       document.addEventListener('click', clickHandler, false);
+      window.addEventListener('resize', calculateOnDebounce);
       
       // Emit event
       document.querySelectorAll(selector).forEach(function(el) {
