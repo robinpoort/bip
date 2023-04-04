@@ -504,10 +504,9 @@
   // Get values
   // ==========
   
-  function getValues(target, settings) {
+  function getValues(target, transitionValues, settings) {
     
-    // Get transitionValues and return false if calculator styling is not found
-    const transitionValues = getTransitionValues(target, target, settings, 'getValues');
+    // Return false if calculator styling is not found
     if (!transitionValues[settings.calculator]) return false;
     
     // Return values
@@ -595,11 +594,10 @@
     let transitionDurations = [];
     let multiplierRoot = [];
     let multiplier = 1;
-    
-    
+  
     // Set transition properties
     // -------------------------
-    
+
     function setTransitionProperties(prop, type, multiplierRoot) {
       if (multiplierRoot.length === 0) return false;
       transitionProperties.push(prop);
@@ -612,9 +610,9 @@
         }
       }
     }
-    
+
     // Loop through matrix values
-    settings.matrixValues.forEach(function(prop) {
+    settings.matrixValues.forEach(function (prop) {
       if (values[prop] !== undefined) {
         multiplierRoot = calculateMultiplier(values[prop]);
         multiplier = multiplierRoot.x;
@@ -631,20 +629,23 @@
         }
       }
     });
-    
+
     // Set transforms
     if (properties === 'all') {
       transforms = transforms.join(' ');
-      element.style.transform = transforms;
+      // Request Animation Frame
+      window.requestAnimationFrame(function () {
+        element.style.transform = transforms;
+      });
     }
-    
+
     // Set transition properties
     else {
       setTransitionProperties('transform', 'translate', multiplierRoot);
     }
-    
+
     // Loop through CSS values
-    settings.cssValues.forEach(function(prop) {
+    settings.cssValues.forEach(function (prop) {
       if (prop !== undefined) {
         let buddyValue = values[prop];
         if (buddyValue !== undefined) {
@@ -654,9 +655,15 @@
           buddyValue.value = multiplierRoot.value;
           if (properties === 'all') {
             if (buddyValue.from < buddyValue.to) {
-              element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
+              // Request Animation Frame
+              window.requestAnimationFrame(function () {
+                element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
+              });
             } else {
-              element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
+              // Request Animation Frame
+              window.requestAnimationFrame(function () {
+                element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
+              });
             }
           } else {
             setTransitionProperties(prop, prop, multiplierRoot);
@@ -664,13 +671,13 @@
         }
       }
     });
-    
+
     // Set transition properties
     if (properties !== 'all') {
       element.style.transitionProperty = transitionProperties;
       element.style.transitionDelay = transitionDelays;
       element.style.transitionDuration = transitionDurations;
-      element.ontransitionend = function() {
+      element.ontransitionend = function () {
         element.removeAttribute('style');
       }
     }
@@ -711,7 +718,8 @@
       buddies[i] = (getTransitionValues(buddy, target, settings, 'buddyValues'));
     });
     // Save values
-    bipValues[bipValuesId].values = getValues(target, settings);
+    const transitionValues = getTransitionValues(target, target, settings, 'getValues');
+    bipValues[bipValuesId].values = getValues(target, transitionValues, settings);
     bipValues[bipValuesId].buddies = buddies;
   }
   
@@ -1275,9 +1283,10 @@
         });
         
         // Save values
+        const transitionValues = getTransitionValues(el, el, settings, 'getValues')
         bipValues[selectorId] = {
           "id": selectorId,
-          "values": getValues(el, settings),
+          "values": getValues(el, transitionValues, settings),
           "buddies": buddies
         };
         

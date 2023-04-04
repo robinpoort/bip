@@ -1,7 +1,7 @@
 {
   "name": "bip",
   "description": "Bip touch transitions",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "homepage": "https://github.com/robinpoort/bip",
   "author": "Robin Poort",
   "repository": {
