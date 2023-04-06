@@ -912,6 +912,7 @@
       isMoving = 0;
       
       // Targets
+      let doRun = false;
       let isControl = [];
       let isSelector = eventTarget.closest(selector) || false;
       
@@ -944,6 +945,14 @@
       } else {
         target = getTarget(isControl, isSelector, settings);
       }
+      
+      // Return
+      document.querySelectorAll(selector).forEach((el) => {
+        if (target === el) {
+          doRun = true;
+        }
+      });
+      if (!doRun) return false;
       
       // Return false if applicable
       if (!target) return false;
@@ -994,9 +1003,6 @@
       // Return false if not moved
       if (touchstartX === touchmoveX || touchstartY === touchmoveY) return false;
       
-      // Prevent default behavior
-      event.preventDefault();
-      
       // Variables
       let translatedX = (targetValues.axis === 'x') ? touchmoveX - (touchstartX - targetValues.from) : false;
       let translatedY = (targetValues.axis === 'y') ? touchmoveY - (touchstartY - targetValues.from) : false;
@@ -1006,35 +1012,42 @@
       let isBetween = (targetValues.axis === 'x') ? translatedX.between(targetValues.from, targetValues.to, true) : translatedY.between(targetValues.from, targetValues.to, true);
       
       // Check if move is approved and set isMoving variable
-      const scrollables = target.querySelectorAll('['+settings.scrollable+']');
       if (isMoving === 0) {
         if (targetValues.axis === 'x') {
           if (difference > 1) {
             if ((Math.abs(touchmoveX - touchstartX) < Math.abs(touchmoveY - touchstartY)) && !settings.hasClassEl.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
             else { isMoving = 1}
           }
-          if (scrollables.length > 0 && target.classList.contains(settings.openClass)) {
-            scrollables.forEach(function(scrollable) {
-              if (eventTarget.closest('['+settings.scrollable+']') === scrollable && scrollable.scrollWidth > scrollable.clientWidth) {
-                isMoving = -1;
-              }
-            })
-          }
         }
-        
         if (targetValues.axis === 'y') {
           if (difference > 1) {
             if ((Math.abs(touchmoveX - touchstartX) > Math.abs(touchmoveY - touchstartY)) && !settings.hasClassEl.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
             else { isMoving = 1}
           }
-          if (scrollables.length > 0 && target.classList.contains(settings.openClass)) {
-            scrollables.forEach(function(scrollable) {
-              if (eventTarget.closest('['+settings.scrollable+']') === scrollable && scrollable.scrollHeight > scrollable.clientHeight) {
-                isMoving = -1;
-              }
-            })
-          }
         }
+      }
+      
+      // Prevent default behavior
+      let stopDefault = true;
+      const scrollables = target.querySelectorAll('['+settings.scrollable+']');
+      if (scrollables.length > 0 && target.classList.contains(settings.openClass)) {
+        scrollables.forEach(function(scrollable) {
+          if (targetValues.axis === 'x') {
+            if (eventTarget.closest('['+settings.scrollable+']') === scrollable && scrollable.scrollWidth > scrollable.clientWidth) {
+              stopDefault = false;
+              isMoving = -1;
+            }
+          }
+          if (targetValues.axis === 'y') {
+            if (eventTarget.closest('[' + settings.scrollable + ']') === scrollable && scrollable.scrollHeight > scrollable.clientHeight) {
+              stopDefault = false;
+              isMoving = -1;
+            }
+          }
+        })
+      }
+      if (stopDefault) {
+        event.preventDefault();
       }
       
       // Only run when move direction equals target direction
@@ -1143,8 +1156,6 @@
       
       // Get values
       target = document.querySelector('['+settings.id+'='+isControl.getAttribute('data-touch-controls')+']');
-      targetValues = bipValues[target.getAttribute(settings.id)].values;
-      buddies = bipValues[target.getAttribute(settings.id)].buddies;
       
       // Return
       document.querySelectorAll(selector).forEach((el) => {
@@ -1154,6 +1165,10 @@
       });
       
       if (!doRun) return false;
+      
+      // Values
+      targetValues = bipValues[target.getAttribute(settings.id)].values;
+      buddies = bipValues[target.getAttribute(settings.id)].buddies;
       
       // Toggle target
       toggle(target, settings, true, false);
