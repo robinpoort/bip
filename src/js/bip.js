@@ -912,6 +912,7 @@
       isMoving = 0;
       
       // Targets
+      let doRun = false;
       let isControl = [];
       let isSelector = eventTarget.closest(selector) || false;
       
@@ -944,6 +945,14 @@
       } else {
         target = getTarget(isControl, isSelector, settings);
       }
+      
+      // Return
+      document.querySelectorAll(selector).forEach((el) => {
+        if (target === el) {
+          doRun = true;
+        }
+      });
+      if (!doRun) return false;
       
       // Return false if applicable
       if (!target) return false;
@@ -1017,7 +1026,7 @@
           }
         }
       }
-  
+      
       // Prevent default behavior
       let stopDefault = true;
       const scrollables = target.querySelectorAll('['+settings.scrollable+']');
@@ -1147,8 +1156,6 @@
       
       // Get values
       target = document.querySelector('['+settings.id+'='+isControl.getAttribute('data-touch-controls')+']');
-      targetValues = bipValues[target.getAttribute(settings.id)].values;
-      buddies = bipValues[target.getAttribute(settings.id)].buddies;
       
       // Return
       document.querySelectorAll(selector).forEach((el) => {
@@ -1158,6 +1165,10 @@
       });
       
       if (!doRun) return false;
+      
+      // Values
+      targetValues = bipValues[target.getAttribute(settings.id)].values;
+      buddies = bipValues[target.getAttribute(settings.id)].buddies;
       
       // Toggle target
       toggle(target, settings, true, false);
