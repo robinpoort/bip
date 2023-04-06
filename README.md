@@ -108,9 +108,12 @@ The "percentage" that the drag has to be at least occured before toggling the el
 
 ### difference
 The amount of pixels that need to differ between the last state and current state to set the direction. For example; swiping down and releasing while accidentally swiping 4 pixels up because of releasing will still keep the direction set to "down". (default: `10`)
-  
+
+### minEndDuration
+The amount of milliseconds the final transition (when releasing) must take. (default: `100`). Set to false to complete ignore.
+
 ### maxEndDuration
-The amount of milliseconds the final transition (when releasing) may take. (default: `500`)
+The amount of milliseconds the final transition (when releasing) may take. (default: `500`). Set to false to complete ignore.
   
 ### openClass
 Class name for elements when open. (default: `'is-open'`)
@@ -123,6 +126,12 @@ Class name for target element when transitioning (on release). (default: `'is-tr
 
 ### hasTouchmoveClass
 Class name for body element when there's an active touchmove happening. (default: `'has-touchmove'`)
+
+### hasOpenClass
+Class name for body element when any bip element is 'open'. (default: `'has-open-bip'`)
+
+### hasClassEl
+The element the above `has-` classes have to be applied to. (default: `document.body`)
 
 ### matrixValues
 Default matrix values to check. (default: `['translate', 'scale', 'rotate', 'skew']`)
