@@ -89,7 +89,7 @@ Data attribute name for noswipe elements. Clicking these elements will still tri
 Data attribute name for noclick elements. Swiping these elements will still trigger toggle. (default: `data-touch-noclick`)
 
 ### scrollable
-Data attribute name for scrollable elements. When this element has overflowing content swipe will be disabled so the user can scroll (especially on touch devices). (default: `data-touch-noclick`)
+Data attribute name for scrollable elements. When this element has overflowing content swipe will be disabled so the user can scroll (especially on touch devices). (default: `data-touch-scrollable`)
 
 ### accordion
 Data attribute name for accordion elements. Items only accordion if both active and target element have this data attribute. (default: `data-touch-accordion`)
