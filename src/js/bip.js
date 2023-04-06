@@ -43,6 +43,7 @@
     transitioningClass: 'is-transitioning',
     hasTouchmoveClass: 'has-touchmove',
     hasOpenClass: 'has-open-bip',
+    hasClassEl: document.body,
     
     matrixValues: ['translate', 'scale', 'rotate', 'skew'],
     cssValues: ['opacity'],
@@ -70,8 +71,8 @@
   let noswipe = false;
   let noclick = false;
   let bipValues = {};
-
-
+  
+  
   // Reset values
   // ============
   
@@ -594,10 +595,10 @@
     let transitionDurations = [];
     let multiplierRoot = [];
     let multiplier = 1;
-  
+    
     // Set transition properties
     // -------------------------
-
+    
     function setTransitionProperties(prop, type, multiplierRoot) {
       if (multiplierRoot.length === 0) return false;
       transitionProperties.push(prop);
@@ -610,7 +611,7 @@
         }
       }
     }
-
+    
     // Loop through matrix values
     settings.matrixValues.forEach(function (prop) {
       if (values[prop] !== undefined) {
@@ -629,18 +630,18 @@
         }
       }
     });
-
+    
     // Set transforms
     if (properties === 'all') {
       transforms = transforms.join(' ');
       element.style.transform = transforms;
     }
-
+    
     // Set transition properties
     else {
       setTransitionProperties('transform', 'translate', multiplierRoot);
     }
-
+    
     // Loop through CSS values
     settings.cssValues.forEach(function (prop) {
       if (prop !== undefined) {
@@ -662,7 +663,7 @@
         }
       }
     });
-
+    
     // Set transition properties
     if (properties !== 'all') {
       element.style.transitionProperty = transitionProperties;
@@ -753,7 +754,7 @@
     
     // Remove body class
     if (type === 'close') {
-      document.body.classList.remove(settings.hasOpenClass);
+      settings.hasClassEl.classList.remove(settings.hasOpenClass);
     }
     
     // Recalculate values after toggle
@@ -825,7 +826,7 @@
     let hasActive = false;
     let isMoving = 0;
     
-  
+    
     // Handle finished gesture
     // =======================
     
@@ -848,7 +849,7 @@
       // Add / remove classes
       target.classList.add(settings.transitioningClass);
       target.classList.remove(settings.touchmoveClass);
-      if (!click) { document.body.classList.remove(settings.hasTouchmoveClass); }
+      if (!click) { settings.hasClassEl.classList.remove(settings.hasTouchmoveClass); }
       
       // Set "go" variable depending on settings
       if (click && settings.swipeOnly) { go = false; }
@@ -876,7 +877,7 @@
         buddies = [];
         toggle(hasActive, settings, true, true);
       }
-  
+      
       // Remove transitioning class when finalDuration is over
       setTimeout(function() {
         target.classList.remove(settings.transitioningClass);
@@ -884,9 +885,9 @@
         
         // Remove open class from the body
         if (document.querySelectorAll('[class*="openedby:"]').length === 0) {
-          document.body.classList.remove(settings.hasOpenClass);
+          settings.hasClassEl.classList.remove(settings.hasOpenClass);
         }
-  
+        
         // RecalculateValues
         recalculateValues(target, settings);
         
@@ -961,7 +962,7 @@
       buddies = bipValues[target.getAttribute(settings.id)].buddies;
       
       // Add open class to the body
-      document.body.classList.add(settings.hasOpenClass);
+      settings.hasClassEl.classList.add(settings.hasOpenClass);
       
       // Emit event
       emitEvent('start', settings, target, {
@@ -1009,7 +1010,7 @@
       if (isMoving === 0) {
         if (targetValues.axis === 'x') {
           if (difference > 1) {
-            if ((Math.abs(touchmoveX - touchstartX) < Math.abs(touchmoveY - touchstartY)) && !document.body.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
+            if ((Math.abs(touchmoveX - touchstartX) < Math.abs(touchmoveY - touchstartY)) && !settings.hasClassEl.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
             else { isMoving = 1}
           }
           if (scrollables.length > 0 && target.classList.contains(settings.openClass)) {
@@ -1023,7 +1024,7 @@
         
         if (targetValues.axis === 'y') {
           if (difference > 1) {
-            if ((Math.abs(touchmoveX - touchstartX) > Math.abs(touchmoveY - touchstartY)) && !document.body.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
+            if ((Math.abs(touchmoveX - touchstartX) > Math.abs(touchmoveY - touchstartY)) && !settings.hasClassEl.classList.contains(settings.hasTouchmoveClass)) { isMoving = -1; }
             else { isMoving = 1}
           }
           if (scrollables.length > 0 && target.classList.contains(settings.openClass)) {
@@ -1050,8 +1051,8 @@
         }
         
         // Add has-touchmove class to body
-        if (!document.body.classList.contains(settings.hasTouchmoveClass) && event.type === 'touchmove') {
-          document.body.classList.add(settings.hasTouchmoveClass);
+        if (!settings.hasClassEl.classList.contains(settings.hasTouchmoveClass) && event.type === 'touchmove') {
+          settings.hasClassEl.classList.add(settings.hasTouchmoveClass);
         }
         
         // Set last difference
@@ -1165,8 +1166,8 @@
         buddies: buddies
       });
     }
-  
-  
+    
+    
     // Calculate on debounce
     // =====================
     
@@ -1175,11 +1176,11 @@
         recalculateValues(el, settings);
       });
     }, 500);
-  
-  
+    
+    
     // Observer
     // ========
-  
+    
     const observerCallback = (mutationList) => {
       for (const mutation of mutationList) {
         if (mutation.type === "childList") {
@@ -1218,7 +1219,7 @@
       observer.disconnect();
       
       // Remove body classes
-      document.body.classList.remove('bip-busy', settings.hasTouchmoveClass);
+      settings.hasClassEl.classList.remove('bip-busy', settings.hasTouchmoveClass);
       
       // Cleanup elements
       function clean(element) {
