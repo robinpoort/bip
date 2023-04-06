@@ -633,10 +633,7 @@
     // Set transforms
     if (properties === 'all') {
       transforms = transforms.join(' ');
-      // Request Animation Frame
-      window.requestAnimationFrame(function () {
-        element.style.transform = transforms;
-      });
+      element.style.transform = transforms;
     }
 
     // Set transition properties
@@ -655,15 +652,9 @@
           buddyValue.value = multiplierRoot.value;
           if (properties === 'all') {
             if (buddyValue.from < buddyValue.to) {
-              // Request Animation Frame
-              window.requestAnimationFrame(function () {
-                element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
-              });
+              element.style[prop] = buddyValue.from + buddyValue.difference * multiplier + buddyValue.unit;
             } else {
-              // Request Animation Frame
-              window.requestAnimationFrame(function () {
-                element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
-              });
+              element.style[prop] = buddyValue.from - buddyValue.difference * multiplier + buddyValue.unit;
             }
           } else {
             setTransitionProperties(prop, prop, multiplierRoot);
