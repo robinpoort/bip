@@ -3,7 +3,7 @@ Just write your CSS transitions, add a toggle button, optional transition buddie
 
 ## Features
 - Just write CSS transitions. No animating in JS needed.
-- Values are calculated on init, toggle, window resize and when dom content of the element is changed to make Bip as fast as possible while laso being as precise as possible.
+- Values are calculated on init, toggle, window resize and when dom content of the element is changed to make Bip as fast as possible while also being as precise as possible.
 - Add optional buddies to an element that transition with it.
 - All elements move based on their delays en durations. So buddies can start and stop later depending on it’s delay and duration settings.
 
